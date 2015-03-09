@@ -2,6 +2,10 @@ Attribute VB_Name = "mod_off_VBProject"
 ' mod_off_VBProject
 ' 150309.AMG  renamed from mod_off_References and added Export
 ' 150303.AMG  made it generic for any office app
+' from mod_acc_References
+' 080417.AMG  added quick reference documentor
+' 080229.AMG  renamed from mod_vba_references
+' 0603xx.AMG  created as mod_vba_references within HART
 
 ' you must "Trust access to the VBA project object model"
 ' File tab, click Options, click Trust Center, and then click Trust Center Settings
@@ -25,10 +29,16 @@ Sub ListReferences()
     Debug.Print "'"
     Debug.Print "' Name = Description (FullPath) GUID"
     Debug.Print "' ----   -----------  --------  ----"
+
+    ' Dim ref As Reference
     Dim ref As Variant
     With objCurrentVBProject
         For Each ref In .References
             Debug.Print "' " & ref.Name & " = " & ref.Description & " (" & ref.FullPath & ") " & ref.GUID
+    '        If Not ref.BuiltIn Then
+    '            Debug.Print "' " & ref.Name & " (" & ref.FullPath & ") " & ref.Major & "." & ref.Minor & " - " & ref.Guid
+    '        End If
+
         Next
     End With
 End Sub
@@ -37,6 +47,8 @@ Function objCurrentVBProject() As Object
     Select Case Application.Name
         Case "Microsoft Visio":
             Set objCurrentVBProject = Visio.Application.ActiveDocument.VBProject
+'        Case "Microsoft Access":
+'            Set projContainer = Access.Application
 '        Case "Microsoft Excel":
 '            Set projContainer = Excel.ThisWorkbook.VBProject
 '        Case Else
@@ -145,3 +157,51 @@ Function FolderWithVBAProjectFiles() As String
     
 End Function
 
+
+' this was from Access - not sure it will compile in all cases
+Private Function RefreshReference(strName As String, strGUID As String, strVersions As String) As Boolean
+'
+' Samples for strVersions include "1.0" and "1.1, 1.2"
+' Versions separated by commas, major and minor split by a period
+' If one succedes then we stop trying, so list them in order of preference
+'
+    Const ERR_OBJECTLIB_NOT_REG As Long = -2147319779
+    Const ERR_OBJECTLIB_CONFLICT As Long = 32813
+
+    Dim ref As Reference
+    Dim i As Integer
+    Dim iMaxUBound As Integer
+    Dim strEachVer() As String
+    Dim strMajMin() As String
+
+    ' default return value
+    RefreshReference = False
+
+    For Each ref In Application.References
+        If ref.Name = strName Then
+            References.Remove ref
+        End If
+    Next
+    ' an alternative might have been to test the property
+    '   ref.IsBroken
+    ' and only procede if it were
+
+    strEachVer = Split(strVersions, ",")
+    For i = 0 To UBound(strEachVer)
+        strMajMin = Split(strEachVer(i), ".")
+        If UBound(strMajMin) = 1 Then
+            On Error Resume Next
+            Set ref = Application.References.AddFromGuid(strGUID, CLng(strMajMin(0)), CLng(strMajMin(1)))
+            Debug.Print strName, CLng(strMajMin(0)), CLng(strMajMin(1)), Err.Number, Err.Description
+            Select Case Err.Number
+                Case ERR_OBJECTLIB_NOT_REG:       ' if badly registered try to remove
+                        References.Remove ref
+                Case ERR_OBJECTLIB_CONFLICT:      ' this should only happen if we did't exit on success
+                                                    ' no action for now
+                Case 0:
+                        RefreshReference = True
+                        Exit For
+            End Select
+        End If
+    Next
+End Function
