@@ -7,6 +7,7 @@ Const cStrModuleName As String = "mod_exc_LinksFiles"
 ' generic functions for manipulating filesystem objects
 ' and web and sharepoint sites and URLs
 '
+'  150309.AMG  also get URL sub-address
 '  150219.AMG  added GetURL for hyperlinks
 '
 
@@ -29,9 +30,10 @@ Function GetURL(rngCell As Range) As String
         GetURL = Replace _
             (rngCell.Hyperlinks(1).Address, "mailto:", "")
 
-' credit http://excel.tips.net/T003281_Extracting_URLs_from_Hyperlinks.html
-' GetURL = GetURL & "#" & rngCell.Hyperlinks(1).SubAddress
-
+        If rngCell.Hyperlinks(1).SubAddress <> "" Then
+            ' credit http://excel.tips.net/T003281_Extracting_URLs_from_Hyperlinks.html
+            GetURL = GetURL & "#" & rngCell.Hyperlinks(1).SubAddress
+        End If
     End If
 
 End Function
