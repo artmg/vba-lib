@@ -2,3 +2,9 @@ The following modules must remain closed source:
 
 mod_exc_FileLocations
 
+
+These have also been checked to extract any generic code of potential value:
+
+mod_acc_ImportBank
+
+

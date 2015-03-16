@@ -1,6 +1,7 @@
 Attribute VB_Name = "mod_off_ExportListToExcel"
 ' mod_off_ExportListToExcel
-' 150303.AMG
+' 150316.AMG  debug pointer issue
+' 150303.AMG  created
 
 ' References
 ' ==========
@@ -19,6 +20,7 @@ Function ExcelOutputCreateWorksheet()
     Dim wbk As Excel.Workbook
     Set wbk = Excel.Application.Workbooks.Add
     Set shtOut = wbk.Worksheets(1)
+    
     lngNextRow = 1
     lngNextCol = 1
 End Function
@@ -31,5 +33,10 @@ End Function
 
 Function ExcelOutputWriteValue(val As Variant)
     shtOut.Cells(lngNextRow, lngNextCol).Value = val
+    lngNextCol = lngNextCol + 1
 End Function
 
+Function ExcelOutputShow()
+    shtOut.Activate
+'    Excel.Application.ActivateMicrosoftApp
+End Function
