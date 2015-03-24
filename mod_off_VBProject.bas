@@ -1,5 +1,7 @@
 Attribute VB_Name = "mod_off_VBProject"
 ' mod_off_VBProject
+
+' 150324.AMG  enabled for (and test with) Excel VBProj objects
 ' 150309.AMG  renamed from mod_off_References and added Export
 ' 150303.AMG  made it generic for any office app
 ' from mod_acc_References
@@ -48,9 +50,9 @@ Function objCurrentVBProject() As Object
         Case "Microsoft Visio":
             Set objCurrentVBProject = Visio.Application.ActiveDocument.VBProject
 '        Case "Microsoft Access":
-'            Set projContainer = Access.Application
-'        Case "Microsoft Excel":
-'            Set projContainer = Excel.ThisWorkbook.VBProject
+'            Set objCurrentVBProject = Access.Application
+        Case "Microsoft Excel":
+            Set objCurrentVBProject = Excel.ThisWorkbook.VBProject
 '        Case Else
 '            Set objCurrentVBProject = VBIDE.VDE.ActiveVBProject
 '            Set objCurrentVBProject = Application.Vbe.ActiveVBProject
@@ -65,6 +67,7 @@ Public Sub ExportModules()
     Dim szExportPath As String
     Dim szFileName As String
     Dim cmpComponent As VBIDE.VBComponent
+    Dim objProj As Object
 '    Dim cmpComponent As Object
 
 '    credit http://www.rondebruin.nl/win/s9/win002.htm
@@ -82,7 +85,8 @@ Public Sub ExportModules()
         Kill FolderWithVBAProjectFiles & "\*.*"
     On Error GoTo 0
 
-    With objCurrentVBProject
+    Set objProj = objCurrentVBProject
+    With objProj
     
         If .Protection = 1 Then
         MsgBox "The VBA in this workbook is protected," & _
