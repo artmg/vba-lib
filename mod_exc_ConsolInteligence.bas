@@ -13,36 +13,48 @@ Attribute VB_Name = "mod_exc_ConsolInteligence"
 '
 ' (c) Join the Bits ltd
 
+'  150326.AMG  use Equivalents table to combine similar Key values and move Match into DataTables module
 '  150324.AMG  minor tweaks and potential improvements
 '  150115.AMG  extended with wide option
 '  141113.AMG  cribbed from various mod_exc's
 
 
 ' REQUIRES:
+'   mod_exc_DataTables
 '   mod_exc_WorkbooksSheetsNames
 
 
 ' IMPROVE:
-' mention trailing slash
-' X make output name generic
-'
 '  move Option Variables out of module into Variables tab
 '  routine to create SourceDefinitions AND Variables Tab if do not exist
 '  populate it with Path = current path (to show adding trailing slash
+'  allow Numerical Add when additional rows match, if column specified as '+N
 
 ' PREPARE:
 ' SourceDefinitions sheet contains columns for:
 '   SourceID
 '   Path
-'   File
+'   File    (including trailing folder delimeter)
 '   Sheet
 '
 ' then a series of Destination Column Names
 ' first destination column is unique key for Wide option
 '
-' and finally a column called
+' and finally a column (NOT YET IMPLEMENTED) called
 '   Exceptions
 ' which gives logic stating which rows NOT to import
+'
+' IF UseEquivalents option is true (ASSUME Wide is also true)
+' then also PREPARE:
+' KeyEquivalents sheet contains columns for:
+'    EquivalentIncorrectKey
+'    RefersToCorrectKey
+'
+' If the 'incorrect' key is NOT found in the consolidated table,
+' the corresponding 'Correct' value is sought instead,
+' before creating a separate line
+'
+
 
 Option Explicit
 
@@ -57,20 +69,32 @@ Dim intVals As Integer
 ' Option Variables to pass around
 Dim bWide As Boolean
 Dim bMatchCase As Boolean
+Dim bUseEquivalents As Boolean
 Dim strKeyIgnore As String
 
 Sub ConsolidateWithIntelligence()
 
     Dim shtDefs As Worksheet
+    Dim shtEquivs As Worksheet
     Dim shtOutput As Worksheet
+    Dim strSourceSheetName As String
+    Dim strEquivsSheetName As String
     
     ' set Option Variables
     ' manually for now - IMPROVE move onto worksheet
     bWide = True ' Output will be wide
+    bUseEquivalents = True ' use KeyEquivalents sheet
     bMatchCase = False ' Key match will be case insensitive
     strKeyIgnore = "" ' text to strip before matching
+
     ' IMPROVE - MAKE these variable too
-    Set shtDefs = ActiveWorkbook.Worksheets("SourceDefinitions")
+    strSourceSheetName = "SourceDefinitions"
+    strEquivsSheetName = "KeyEquivalents"
+
+    Set shtDefs = ActiveWorkbook.Worksheets(strSourceSheetName)
+    If bUseEquivalents Then
+        Set shtEquivs = ActiveWorkbook.Worksheets(strEquivsSheetName)
+    End If
     Set shtOutput = getSheetOrCreateIfNotFound(ActiveWorkbook, "Consolidated")
 
     ClearEntireSheet shtOutput
@@ -81,7 +105,7 @@ Sub ConsolidateWithIntelligence()
     Dim intDefRow As Integer
     For intDefRow = 2 To shtDefs.UsedRange.Rows.Count
 '        CopyDataFromSourceTo shtOutput, shtDefs.Rows(intDefRow)
-        CopyDataFromDefSrcTo shtOutput, shtDefs, intDefRow
+        CopyDataFromDefSrcTo shtOutput, shtDefs, shtEquivs, intDefRow
     Next intDefRow
 End Sub
 
@@ -152,6 +176,7 @@ End Function
 Function CopyDataFromDefSrcTo( _
     ByRef shtOutput As Worksheet _
     , ByRef shtDefs As Worksheet _
+    , ByRef shtEquivs As Worksheet _
     , ByVal intDefRow As Integer _
 )
 
@@ -168,7 +193,7 @@ Function CopyDataFromDefSrcTo( _
 
     Dim intSrcRow As Integer
     For intSrcRow = 2 To shtSource.UsedRange.Rows.Count
-        CopyRowFromSourceTo shtOutput, shtDefs, intDefRow, shtSource, intSrcRow
+        CopyRowFromSourceTo shtOutput, shtDefs, shtEquivs, intDefRow, shtSource, intSrcRow
 '        CopyRowFromSourceTo shtOutput.Rows(intNextOutRow), rngDefRow, shtSource.Rows(intSrcRow)
     Next intSrcRow
 
@@ -186,80 +211,157 @@ End Function
 Function CopyRowFromSourceTo( _
     ByRef shtOutput As Worksheet _
     , ByRef shtDef As Worksheet _
+    , ByRef shtEquivs As Worksheet _
     , ByVal intDefRow As Integer _
     , ByRef shtSource As Worksheet _
     , ByVal intSourceRow As Integer _
 )
-    ' unless wide mode finds an alternative we will output to next available line
-    Dim rngOutRow As Range
-    Set rngOutRow = shtOutput.Rows(intNextOutRow)
-    intNextOutRow = intNextOutRow + 1
 
-    If bWide Then ' search for existing line to consolidate onto
-        Dim intMatchOutRow As Integer
-        Dim strNewKey, strCheckKey As String
-        ' lookup new key value
-        strNewKey = strPrepareKeyForMatch(shtSource.Cells(intSourceRow, CInt(shtDef.Cells(intDefRow, intFirstDefCol).Value)).Value)
-        If strNewKey = "" Then
-            intNextOutRow = intNextOutRow - 1   ' don't need new row any more
-            GoTo keyEmpty:
-        End If
-        For intMatchOutRow = 2 To (intNextOutRow - 1)
-            strCheckKey = strPrepareKeyForMatch(shtOutput.Cells(intMatchOutRow, 1))
-            If strNewKey = strCheckKey Then
-                Set rngOutRow = shtOutput.Rows(intMatchOutRow)
-                intNextOutRow = intNextOutRow - 1   ' don't need new row any more
-                intMatchOutRow = intNextOutRow ' break out
-            End If
-        Next
-        rngOutRow.Cells(1, 1).Value = strNewKey
-    Else ' if not wide, copy SourceID onto destination
-        rngOutRow.Cells(1, 1).Value = shtDef.Cells(intDefRow, 1).Value
+    Dim enumMatchType As enumDataTableMatchType
+    If bMatchCase Then
+        enumMatchType = MatchCaseSens
+    Else
+        enumMatchType = MatchCaseInsens
     End If
 
+    Dim intOutRow, intMatchOutRow, intMatchEquivRow  As Integer
+    Dim intSourceCol As Integer
+    intSourceCol = CInt(shtDef.Cells(intDefRow, intFirstDefCol).Value)
+
+    ' unless wide mode finds an alternative we will output to next available line
+    Dim rngOutRow As Range
+
+    Dim strNewKey, strMatchKey, strEquivKey As String
+    intMatchOutRow = 0
+
+    ' when consolidating wide,
+    ' search for existing line to consolidate onto
+    ' first do match on output
+    ' if not found then do match on equivalent
+    ' then do match of equivalent on output
+
+    If Not bWide Then
+        strNewKey = shtDef.Cells(intDefRow, 1).Value
+    Else
+        ' first look for strNewKey in shtOutput
+        strNewKey = shtSource.Cells(intSourceRow, intSourceCol).Value
+
+        strMatchKey = strMatchPrepareValue _
+            (strUnprepared:=strNewKey _
+            , enumMatchType:=enumMatchType _
+            , strIgnore:=strKeyIgnore _
+            )
+
+        intMatchOutRow = intMatchGetRow _
+            (strMatch:=strMatchKey _
+            , enumMatchType:=enumMatchType _
+            , sht:=shtOutput _
+            , intCol:=1 _
+            , intFirstRow:=2 _
+            , intLastRow:=intNextOutRow - 1 _
+            , strIgnore:=strKeyIgnore _
+            )
+
+        ' If not found then look for strNewKey in shtEquiv
+        If (intMatchOutRow = 0) And bUseEquivalents Then
+            intMatchEquivRow = intMatchGetRow _
+                (strMatch:=strNewKey _
+                , enumMatchType:=enumMatchType _
+                , sht:=shtEquivs _
+                , intCol:=1 _
+                , intFirstRow:=2 _
+                , intLastRow:=300 _
+                , strIgnore:=strKeyIgnore _
+                )
+            ' WHAT IS intLastRow for END OF EQUIVS - currently fixed at 300!
+
+            ' If Equiv found then look for set strEquivKey
+            If intMatchEquivRow <> 0 Then
+                ' This assumes New Key WILL be exact value from Equivs
+                strNewKey = shtEquivs.Cells(intMatchEquivRow, 2).Value
+                ' and leaves strEquivKey variable UNUSED
+
+                strMatchKey = strMatchPrepareValue _
+                    (strUnprepared:=strNewKey _
+                    , enumMatchType:=enumMatchType _
+                    , strIgnore:=strKeyIgnore _
+                    )
+        
+                ' and look for THAT in shtOutput
+                intMatchOutRow = intMatchGetRow _
+                    (strMatch:=strMatchKey _
+                    , enumMatchType:=enumMatchType _
+                    , sht:=shtOutput _
+                    , intCol:=1 _
+                    , intFirstRow:=2 _
+                    , intLastRow:=intNextOutRow - 1 _
+                    , strIgnore:=strKeyIgnore _
+                    )
+            End If
+        End If
+    End If
+
+    ' if we have a match use that row
+    If intMatchOutRow <> 0 Then
+        intOutRow = intMatchOutRow
+        ' AND ASSUMES that NEW KEY will be 'untreated',
+        ' NOT the 'prepared' value
+'        ' IS KEY ALWAYS FIRST ?
+'        strNewKey = shtSource.Cells(intSourceRow, intSourceCol).Value
+    Else
+        ' else add a new one on the end
+        intOutRow = intNextOutRow
+        intNextOutRow = intNextOutRow + 1
+'        ' CAN WE PULL THIS OUT A LEVEL TO DEDUPE ABOVE?
+'        If bWide Then
+'            strNewKey = shtSource.Cells(intSourceRow, intSourceCol).Value
+'        Else
+'            strNewKey = shtDef.Cells(intDefRow, 1).Value
+'        End If
+    End If
+
+
+    Set rngOutRow = shtOutput.Rows(intOutRow)
+    rngOutRow.Cells(1, 1).Value = strNewKey
+'    Else ' if not wide, copy SourceID onto destination
+'        Set rngOutRow = shtOutput.Rows(intNextOutRow)
+'        strNewKey = shtDef.Cells(intDefRow, 1).Value
+'        rngOutRow.Cells(1, 1).Value = shtDef.Cells(intDefRow, 1).Value
+'    End If
+
+
+' SINCE ADDING WIDE option, has this lost the original non-wide functionality????
     Dim intCol As Integer
+    Dim bTreatAsNum As Boolean
     For intCol = intFirstDefCol To intLastDefCol
-        If CInt(shtDef.Cells(intDefRow, intCol).Value) > 0 Then
+         intSourceCol = CInt(shtDef.Cells(intDefRow, intCol).Value)
+        ' if there is a + in the column number, treat the value as a number
+         bTreatAsNum = (InStr(CStr(shtDef.Cells(intDefRow, intCol).Value), "+") > 0)
+         If intSourceCol > 0 Then
             Dim strNewValue As String
-            Dim celExisting As Range
+            Dim celExisting, celNew As Range
 'shtSource.Rows (intSrcRow)
 '            rngOutRow.Cells(1, intCol - intFirstDefCol + 2).Value = rngSrcRow.Cells(1, CInt(rngDefRow.Cells(1, intCol).Value)).Value
-            strNewValue = shtSource.Cells(intSourceRow, CInt(shtDef.Cells(intDefRow, intCol).Value)).Value
+            Set celNew = shtSource.Cells(intSourceRow, intSourceCol)
             Set celExisting = rngOutRow.Cells(1, intDestCol(intDefRow - 1, intCol - intFirstDefCol + 1))
-            If (CStr(celExisting.Value) <> "") And (strNewValue <> "") Then
-'                If bMatchCase Then
-'                    strToReplace = strKeyIgnore
-'                Else
+            If bTreatAsNum Then
+                celExisting.Value = celExisting.Value + celNew.Value
+            Else
+                strNewValue = celNew.Value
+                If (CStr(celExisting.Value) <> "") And (strNewValue <> "") Then
+    '                If bMatchCase Then
+    '                    strToReplace = strKeyIgnore
+    '                Else
                     If UCase(strNewValue) <> UCase(celExisting.Value) Then
                         strNewValue = CStr(celExisting.Value) + cStrMultiValDelim + strNewValue
                     End If
-'                End If
-                ' if not empty
-'            rngOutRow.Cells(1, intCheckCol).Value = strNewValue
+    '                End If
+                    ' if not empty
+    '            rngOutRow.Cells(1, intCheckCol).Value = strNewValue
+                End If
+                celExisting.Value = strNewValue
             End If
-            celExisting.Value = strNewValue
         End If
     Next intCol
-
-keyEmpty:
 End Function
-
-Function strPrepareKeyForMatch(strCurrentKey) As String
-    Dim strKeyToMatch As String
-    Dim strToReplace As String
-    
-    If bMatchCase Then
-        strToReplace = strKeyIgnore
-    Else
-        strKeyToMatch = UCase(strCurrentKey)
-        strToReplace = UCase(strKeyIgnore)
-    End If
-    
-    If strToReplace <> "" Then
-        strKeyToMatch = Replace(strKeyToMatch, strToReplace, "")
-    End If
-    strPrepareKeyForMatch = strKeyToMatch
-End Function
-
-
 
