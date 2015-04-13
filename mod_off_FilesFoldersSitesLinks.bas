@@ -7,6 +7,7 @@ Const cStrModuleName As String = "mod_off_FilesFoldersSitesLinks"
 ' generic functions for manipulating filesystem objects
 ' and web and sharepoint sites and URLs
 '
+'  150413.AMG  debugged recursion by moving into sub-function
 '  150316.AMG  added recursion into subfolders
 '  150304.AMG  renamed from mod_exc_FilesFoldersSitesLinks as actually generic
 '  150219.AMG  added GetURL for hyperlinks
@@ -159,33 +160,39 @@ Function arrFilteredPathnamesInUserTree( _
         ' assuuming strFilter is single element but delimited (e.g. ; or | ), break it into array for easier match looping
         
         ' first add the current
-        AddMatchingNamesFromFolderToArray strArrReturn, strFolderName, strFilter, intElement
+        AddMatchingNamesFromFolderToArray strArrReturn, strFolderName, strFilter, intElement, bRecurse
         
-        If bRecurse Then ' do tree not just folder
-            Dim fso As Scripting.FileSystemObject
-            Dim fsoFolder As Scripting.folder
-            Dim fsoSubFolder As Scripting.folder
-            
-            Set fso = New Scripting.FileSystemObject
-            Set fsoFolder = fso.GetFolder(strFolderName)
-            'Application.ScreenUpdating = False
-
-            For Each fsoSubFolder In fsoFolder.SubFolders
-                AddMatchingNamesFromFolderToArray strArrReturn, fsoSubFolder.Path, strFilter, intElement
-            Next fsoSubFolder
-        End If
+'        If bRecurse Then ' do tree not just folder
+'            Dim fso As Scripting.FileSystemObject
+'            Dim fsoFolder As Scripting.folder
+'            Dim fsoSubFolder As Scripting.folder
+'
+'            Set fso = New Scripting.FileSystemObject
+'            Set fsoFolder = fso.GetFolder(strFolderName)
+'            'Application.ScreenUpdating = False
+'
+'            For Each fsoSubFolder In fsoFolder.SubFolders
+'                AddMatchingNamesFromFolderToArray strArrReturn, fsoSubFolder.Path, strFilter, intElement, bRecurse
+'            Next fsoSubFolder
+'        End If
     End If
     
     arrFilteredPathnamesInUserTree = strArrReturn
 End Function
 
 
-Function AddMatchingNamesFromFolderToArray(strArray() As String, strFolderName As String, strFilter As String, intElement As Integer)
+Function AddMatchingNamesFromFolderToArray( _
+  strArray() As String _
+, strFolderName As String _
+, strFilter As String _
+, intElement As Integer _
+, Optional bRecurse As Boolean = True _
+)
     Dim fso As Scripting.FileSystemObject
     Dim fsoFolder As Scripting.folder
     Dim fsoFile As Scripting.file
-    Set fso = New Scripting.FileSystemObject
     
+    Set fso = New Scripting.FileSystemObject
     Set fsoFolder = fso.GetFolder(strFolderName)
     
     For Each fsoFile In fsoFolder.files
@@ -202,6 +209,15 @@ Function AddMatchingNamesFromFolderToArray(strArray() As String, strFolderName A
             intElement = intElement + 1
         End If
     Next fsoFile
+
+    ' recurse into downlevel folders if required
+    If bRecurse Then
+        Dim fsoSubFolder As Scripting.folder
+        
+        For Each fsoSubFolder In fsoFolder.SubFolders
+            AddMatchingNamesFromFolderToArray strArray, fsoSubFolder.Path, strFilter, intElement, bRecurse
+        Next fsoSubFolder
+    End If
 
 End Function
 
