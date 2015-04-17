@@ -1,5 +1,7 @@
 Attribute VB_Name = "mod_vsd_DocsShapesLinks"
 ' mod_vsd_DocsShapesLinks
+
+' 150413.AMG begin doc and hyperlink update code
 ' 150313.AMG added Doc stuff renamed from mod_vsd_ShapesLinks
 ' 150303.AMG created
 
@@ -34,11 +36,39 @@ Function EnumHyperlinks(shp As Shape)
     If shp.Hyperlinks.Count > 0 Then
         For Each hlk In shp.Hyperlinks
             ' DoSomethingWith hlk
-            AddHyperlinkDetailToList hlk
+'            AddHyperlinkDetailToList hlk
+            UpdateHyperlinkDetail hlk
         Next
     End If
     
 End Function
+
+Function UpdateHyperlinkDetail(hlk As Hyperlink)
+    Dim strNewAddress As String
+    ' ignore empty hyperlinks
+    If hlk.Description & hlk.Address <> "" Then
+        strNewAddress = ""
+
+        AddHyperlinkDetailToList hlk, strNewAddress
+
+'        ExcelOutputWriteValue strCurrentFileFolder
+'        ExcelOutputWriteValue strCurrentFileNameOnly
+'        ExcelOutputWriteValue hlk.Shape.Name
+'        ExcelOutputWriteValue hlk.Shape.Text
+'        ExcelOutputWriteValue hlk.Description
+'        ExcelOutputWriteValue hlk.Address
+'        ExcelOutputWriteValue strNewAddress
+'        ExcelOutputNextRow
+    
+        If Not bTrialRun Then
+            hlk.Address = strNewAddress
+        End If
+    End If
+End Function
+
+
+
+
 
 ' Docs
 
@@ -46,10 +76,16 @@ End Function
 
 ' Docs and Shapes
 
-Function VisioOpenAndRecurseAllShapesInDoc(strFileName As String)
+Function VisioOpenAndRecurseAllShapesInDoc( _
+  strFileName As String _
+, Optional bSave As Boolean = False _
+)
     Dim doc As Document
     Set doc = Application.Documents.Open(strFileName)
     RecurseAllShapesInDoc doc
+    If bSave Then
+        doc.Save
+    End If
     doc.Close
     Set doc = Nothing
 End Function
