@@ -13,6 +13,7 @@ Attribute VB_Name = "mod_exc_ConsolInteligence"
 '
 ' (c) Join the Bits ltd
 
+'  150514.AMG  extra suggestions for improvement
 '  150326.AMG  use Equivalents table to combine similar Key values and move Match into DataTables module
 '  150324.AMG  minor tweaks and potential improvements
 '  150115.AMG  extended with wide option
@@ -25,6 +26,7 @@ Attribute VB_Name = "mod_exc_ConsolInteligence"
 
 
 ' IMPROVE:
+'  trim trailing (& leading) spaces when comparing keys to avoid dupes from typos (optionally trim "." ?)
 '  move Option Variables out of module into Variables tab
 '  routine to create SourceDefinitions AND Variables Tab if do not exist
 '  populate it with Path = current path (to show adding trailing slash
