@@ -1,10 +1,12 @@
-Attribute VB_Name = "mod_exc_WorkbooksSheetsNames"
+Attribute VB_Name = "mod_exc_WbkShtRngName"
 Option Explicit
 
-' mod_exc_WorkbooksSheetsNames
+' mod_exc_WbkShtRngName
+' 
+' generic functions for handling Excel Workbooks, Worksheets, Ranges and Names
 '
-' generic functions for handling Excel Workbooks, Worksheets and Names
 
+'  150507.AMG  rename from mod_exc_WorkbooksSheetsNames
 '  141113.AMG  added Clear
 '  130821.AMG  created
 
