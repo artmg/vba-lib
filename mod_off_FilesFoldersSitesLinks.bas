@@ -1,12 +1,14 @@
 Attribute VB_Name = "mod_off_FilesFoldersSitesLinks"
 Option Explicit
 
-' error handling tag
+' error handling tag             ********************************
 Const cStrModuleName As String = "mod_off_FilesFoldersSitesLinks"
+'                                ********************************
 
 ' generic functions for manipulating filesystem objects
 ' and web and sharepoint sites and URLs
 '
+'  150511.AMG  minor documentation tweaks
 '  150413.AMG  debugged recursion by moving into sub-function
 '  150316.AMG  added recursion into subfolders
 '  150304.AMG  renamed from mod_exc_FilesFoldersSitesLinks as actually generic
@@ -21,6 +23,20 @@ Const cStrModuleName As String = "mod_off_FilesFoldersSitesLinks"
 '
 ' Scripting = Microsoft Scripting Runtime (C:\Windows\SysWOW64\scrrun.dll) {420B2830-E718-11CF-893D-00A0C9054228}
 ' MSXML2 = Microsoft XML, v6.0 (C:\WINDOWS\System32\msxml6.dll) {F5078F18-C551-11D3-89B9-0000F81FE221}
+
+' DEPENDENCIES
+' ============
+'
+' No vba-lib depends yet
+'
+
+' IMPROVEMENTS
+' ============
+'
+' * Consider hiving Links routines into separate module, to reduce need to add MSXML2 reference when not required
+' * Consider moving the filename matching routine into a more generic module as a string matcher
+' * derive wbkOpenWithNoErrors code from mod_exc_SchemaReader or mod_exc_SummariseWbkMeta and perhaps close as well
+'
 
 ' kludge for apps without Application.PathSeparator
 Const cStrPathSeparator = "\"
@@ -78,17 +94,18 @@ Public Function GetFolderFromFileName(FileName As String) As String
 End Function
 
 
+
 ' was mod_exc_ParseAuditFiles 080326.AMG
 ' now uses InStrRev to get the last "." 150219.AMG
-Function FileNameWithoutExtension(strFileName As String) As String
+Function FileNameWithoutExtension(strFilename As String) As String
     Dim str As String
     Dim iPosn As Integer
     
-    iPosn = InStrRev(strFileName, ".")
+    iPosn = InStrRev(strFilename, ".")
     If iPosn > 1 Then
-        str = Left(strFileName, iPosn - 1)
+        str = Left(strFilename, iPosn - 1)
     Else
-        str = strFileName
+        str = strFilename
     End If
     
     FileNameWithoutExtension = str
@@ -156,25 +173,8 @@ Function arrFilteredPathnamesInUserTree( _
     strFolderName = strFolderChosenByUser("Please choose a folder")
     
     If strFolderName <> "" Then
-    
-        ' assuuming strFilter is single element but delimited (e.g. ; or | ), break it into array for easier match looping
-        
-        ' first add the current
+        ' This routine will recurse itself from inside
         AddMatchingNamesFromFolderToArray strArrReturn, strFolderName, strFilter, intElement, bRecurse
-        
-'        If bRecurse Then ' do tree not just folder
-'            Dim fso As Scripting.FileSystemObject
-'            Dim fsoFolder As Scripting.folder
-'            Dim fsoSubFolder As Scripting.folder
-'
-'            Set fso = New Scripting.FileSystemObject
-'            Set fsoFolder = fso.GetFolder(strFolderName)
-'            'Application.ScreenUpdating = False
-'
-'            For Each fsoSubFolder In fsoFolder.SubFolders
-'                AddMatchingNamesFromFolderToArray strArrReturn, fsoSubFolder.Path, strFilter, intElement, bRecurse
-'            Next fsoSubFolder
-'        End If
     End If
     
     arrFilteredPathnamesInUserTree = strArrReturn
@@ -194,12 +194,13 @@ Function AddMatchingNamesFromFolderToArray( _
     
     Set fso = New Scripting.FileSystemObject
     Set fsoFolder = fso.GetFolder(strFolderName)
-    
     For Each fsoFile In fsoFolder.files
+        
+        ' assuming strFilter is single element but delimited (e.g. ; or | ), break it into array for easier match looping
         
         ' check against each of the filters in the array
         ' ONLY DOES ONE for the moment
-        If LCase(Right(fsoFile.Name, Len(strFilter))) = LCase(strFilter) Then
+        If bMatchFilenameWithFilter(fsoFile.Name, strFilter) Then
         
             ' as redimming each item affects performance,
             ' consider doing it say 10 or 100 at a time then shrinking at the end
@@ -219,6 +220,24 @@ Function AddMatchingNamesFromFolderToArray( _
         Next fsoSubFolder
     End If
 
+' early attempts to enumerate MS Office files in folders attempted to use FileSearch VBA object,
+' however it seemd that SearchScopes were getting in the way
+'    With Application.FileSearch
+'        .NewSearch
+'        .LookIn = SourceFolder
+'        .SearchSubFolders = False
+'        .FileType = msoFileTypeExcelWorkbooks
+'        .FileName = "*.xls"
+'        If .Execute > 0 Then
+'            MsgBox "There were " & .FoundFiles.Count & _
+'                " file(s) found."
+'            Dim FileCount As Integer
+'            For FileCount = 1 To .FoundFiles.Count
+'                MsgBox .FoundFiles(FileCount)
+'            Next FileCount
+'        End If
+'    End With
+    
 End Function
 
 
@@ -228,6 +247,34 @@ Function FindParentFolderFromPath(strFullPath As String, Optional theSlash As St
 End Function
 
 
+Function bMatchFilenameWithFilter( _
+    ByVal strFilename As String _
+    , ByVal strFilter As String _
+    ) As Boolean
+' although it may be slightly more computationally expensive to repeat this split apart for each individual file
+' it makes a much neater and more reusable sub function instead of having it inside other 'featured' code
+
+    ' default value
+    bMatchFilenameWithFilter = False
+
+    Dim strFilters() As String
+    Dim iFilter As Integer
+
+' for list of alternative dellimiters we could use for filenames see
+' https://msdn.microsoft.com/en-gb/library/windows/desktop/aa365247(v=vs.85).aspx
+' If you want a generic function to split on multiple delimeters then see
+' http://www.cpearson.com/excel/splitondelimiters.aspx
+    
+    strFilters = Split(Expression:=strFilter, Delimiter:="|", Compare:=vbTextCompare)
+' IF check that split was not empty
+    For iFilter = 0 To UBound(strFilters)
+'NB This test is currently ONLY matching the last characters (e.g. extension)
+        If LCase(Right(strFilename, Len(strFilters(iFilter)))) = LCase(strFilters(iFilter)) Then
+            bMatchFilenameWithFilter = True
+        End If
+    Next iFilter
+
+End Function
 
 
 ' *********** SHAREPOINT FUNCTIONS *********************************************
