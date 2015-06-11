@@ -2,8 +2,9 @@ Attribute VB_Name = "mod_exc_DataTables"
 
 ' mod_exc_DataTables
 '
-' 150326.AMG  added Table Match functions previously in Consol module
-' 150312.AMG  created with table creation
+'  150611.AMG  new match options to trim trailing & leading spaces
+'  150326.AMG  added Table Match functions previously in Consol module
+'  150312.AMG  created with table creation
 
 
 Option Explicit
@@ -12,6 +13,8 @@ Option Explicit
 Public Enum enumDataTableMatchType
     MatchCaseSens
     MatchCaseInsens
+    MatchCaseSensTrim
+    MatchCaseInsensTrim
 End Enum
 
 
@@ -109,14 +112,26 @@ Public Function strMatchPrepareValue _
     Dim strKeyToMatch As String
     Dim strToReplace As String
     
-    If enumMatchType Then
-        strKeyToMatch = UCase(strUnprepared)
-        strToReplace = UCase(strIgnore)
-    Else
-        strToReplace = strIgnore
-    End If
+    Select Case enumMatchType
+        Case enumDataTableMatchType.MatchCaseInsens:
+            strKeyToMatch = UCase(strUnprepared)
+            strToReplace = UCase(strIgnore)
+
+        Case enumDataTableMatchType.MatchCaseInsensTrim:
+            strKeyToMatch = LTrim(RTrim(UCase(strUnprepared)))
+            strToReplace = UCase(strIgnore)
+
+        Case enumDataTableMatchType.MatchCaseSens:
+            strKeyToMatch = strUnprepared
+            strToReplace = strIgnore
+        
+        Case enumDataTableMatchType.MatchCaseSensTrim:
+            strKeyToMatch = LTrim(RTrim(strUnprepared))
+            strToReplace = strIgnore
+        
+    End Select
     
-' ONLY USE IGNORE DEPENDING ON MATCH TYPE FLAG
+' ONLY USE IGNORE DEPENDING ON MATCH TYPE FLAG ??
     If strToReplace <> "" Then
         strKeyToMatch = Replace(strKeyToMatch, strToReplace, "")
     End If

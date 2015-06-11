@@ -13,6 +13,7 @@ Attribute VB_Name = "mod_exc_ConsolInteligence"
 '
 ' (c) Join the Bits ltd
 
+'  150611.AMG  option to trim trailing & leading spaces when comparing keys to avoid dupes from typos
 '  150514.AMG  extra suggestions for improvement
 '  150326.AMG  use Equivalents table to combine similar Key values and move Match into DataTables module
 '  150324.AMG  minor tweaks and potential improvements
@@ -22,11 +23,11 @@ Attribute VB_Name = "mod_exc_ConsolInteligence"
 
 ' REQUIRES:
 '   mod_exc_DataTables
-'   mod_exc_WorkbooksSheetsNames
+'   mod_exc_WbkShtRngName
 
 
 ' IMPROVE:
-'  trim trailing (& leading) spaces when comparing keys to avoid dupes from typos (optionally trim "." ?)
+'  trim trailing (& leading) '.'s ??
 '  move Option Variables out of module into Variables tab
 '  routine to create SourceDefinitions AND Variables Tab if do not exist
 '  populate it with Path = current path (to show adding trailing slash
@@ -70,7 +71,7 @@ Dim intVals As Integer
 
 ' Option Variables to pass around
 Dim bWide As Boolean
-Dim bMatchCase As Boolean
+Dim eMatchType As enumDataTableMatchType
 Dim bUseEquivalents As Boolean
 Dim strKeyIgnore As String
 
@@ -86,7 +87,7 @@ Sub ConsolidateWithIntelligence()
     ' manually for now - IMPROVE move onto worksheet
     bWide = True ' Output will be wide
     bUseEquivalents = True ' use KeyEquivalents sheet
-    bMatchCase = False ' Key match will be case insensitive
+    eMatchType = MatchCaseInsensTrim
     strKeyIgnore = "" ' text to strip before matching
 
     ' IMPROVE - MAKE these variable too
@@ -219,12 +220,9 @@ Function CopyRowFromSourceTo( _
     , ByVal intSourceRow As Integer _
 )
 
+    ' CAN I JUST USE THE GLOBAL?
     Dim enumMatchType As enumDataTableMatchType
-    If bMatchCase Then
-        enumMatchType = MatchCaseSens
-    Else
-        enumMatchType = MatchCaseInsens
-    End If
+    enumMatchType = eMatchType
 
     Dim intOutRow, intMatchOutRow, intMatchEquivRow  As Integer
     Dim intSourceCol As Integer
