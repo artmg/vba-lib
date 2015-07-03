@@ -33,6 +33,8 @@ Const cStrModuleName As String = "mod_off_FilesFoldersSitesLinks"
 ' IMPROVEMENTS
 ' ============
 '
+' * add types to function names (e.g. strFileNameWithoutExtension)
+' * GetFolderFromFileName: option to leave trailing slash
 ' * Consider hiving Links routines into separate module, to reduce need to add MSXML2 reference when not required
 ' * Consider moving the filename matching routine into a more generic module as a string matcher
 ' * derive wbkOpenWithNoErrors code from mod_exc_SchemaReader or mod_exc_SummariseWbkMeta and perhaps close as well

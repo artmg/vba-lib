@@ -1,6 +1,10 @@
 Attribute VB_Name = "mod_exc_ConsolInteligence"
+Option Explicit
 
-' mod_exc_ConsolInteligence
+' error handling tag             ***************************
+Const cStrModuleName As String = "mod_exc_ConsolInteligence"
+'                                ***************************
+
 '
 ' Consolidate tables intelligently from multiple sources
 '
@@ -13,6 +17,7 @@ Attribute VB_Name = "mod_exc_ConsolInteligence"
 '
 ' (c) Join the Bits ltd
 
+'  150618.AMG  add sub to prepare SourceDefinitions sheet and use stronger typing
 '  150611.AMG  option to trim trailing & leading spaces when comparing keys to avoid dupes from typos
 '  150514.AMG  extra suggestions for improvement
 '  150326.AMG  use Equivalents table to combine similar Key values and move Match into DataTables module
@@ -21,45 +26,57 @@ Attribute VB_Name = "mod_exc_ConsolInteligence"
 '  141113.AMG  cribbed from various mod_exc's
 
 
-' REQUIRES:
+' REFERENCES
+' ==========
+'
+' This module uses the following references (paths and GUIDs may vary)
+'   (only those required by it's dependent modules)
+
+' DEPENDENCIES
+' ============
+'
+' This module requires the following vba-lib dependencies:
 '   mod_exc_DataTables
 '   mod_exc_WbkShtRngName
+'   mod_off_FilesFoldersSitesLinks
+
+' IMPROVEMENTS
+' ============
+'
+' * PrepareToUseConsolidation: set column widths, keep trailing slash on sample path
+' * trim trailing (& leading) '.'s ??
+' * move Option Variables out of module into Variables tab
+' * allow Numerical Add when additional rows match, if column specified as '+N
 
 
-' IMPROVE:
-'  trim trailing (& leading) '.'s ??
-'  move Option Variables out of module into Variables tab
-'  routine to create SourceDefinitions AND Variables Tab if do not exist
-'  populate it with Path = current path (to show adding trailing slash
-'  allow Numerical Add when additional rows match, if column specified as '+N
-
-' PREPARE:
-' SourceDefinitions sheet contains columns for:
-'   SourceID
-'   Path
-'   File    (including trailing folder delimeter)
-'   Sheet
+' PREPARATION
+' ===========
 '
-' then a series of Destination Column Names
-' first destination column is unique key for Wide option
+' to use this module:
+' * run the Sub "PrepareToUseConsolidation" to set up the SourceDefinitions sheet
+' * fill in the columns for each source:
+'     SourceID (short string reference)
+'     Path
+'     File    (including trailing folder delimeter)
+'     Sheet
 '
-' and finally a column (NOT YET IMPLEMENTED) called
-'   Exceptions
-' which gives logic stating which rows NOT to import
+' * then a series of Destination Column Names
+' * first destination column is unique key for Wide option
 '
-' IF UseEquivalents option is true (ASSUME Wide is also true)
-' then also PREPARE:
-' KeyEquivalents sheet contains columns for:
-'    EquivalentIncorrectKey
-'    RefersToCorrectKey
+' * and finally a column (NOT YET IMPLEMENTED) called
+'     Exceptions
+'   which gives logic stating which rows NOT to import
 '
-' If the 'incorrect' key is NOT found in the consolidated table,
-' the corresponding 'Correct' value is sought instead,
-' before creating a separate line
+' * IF UseEquivalents option is true (ASSUME Wide is also true)
+'   * then also PREPARE:
+'     KeyEquivalents sheet contains columns for:
+'      EquivalentIncorrectKey
+'      RefersToCorrectKey
 '
-
-
-Option Explicit
+' * If the 'incorrect' key is NOT found in the consolidated table,
+'   the corresponding 'Correct' value is sought instead,
+'   before creating a separate line
+'
 
 Const cStrMultiValDelim As String = "; "
 
@@ -77,9 +94,9 @@ Dim strKeyIgnore As String
 
 Sub ConsolidateWithIntelligence()
 
-    Dim shtDefs As Worksheet
-    Dim shtEquivs As Worksheet
-    Dim shtOutput As Worksheet
+    Dim shtDefs As Excel.Worksheet
+    Dim shtEquivs As Excel.Worksheet
+    Dim shtOutput As Excel.Worksheet
     Dim strSourceSheetName As String
     Dim strEquivsSheetName As String
     
@@ -94,11 +111,11 @@ Sub ConsolidateWithIntelligence()
     strSourceSheetName = "SourceDefinitions"
     strEquivsSheetName = "KeyEquivalents"
 
-    Set shtDefs = ActiveWorkbook.Worksheets(strSourceSheetName)
+    Set shtDefs = Excel.ActiveWorkbook.Worksheets(strSourceSheetName)
     If bUseEquivalents Then
-        Set shtEquivs = ActiveWorkbook.Worksheets(strEquivsSheetName)
+        Set shtEquivs = Excel.ActiveWorkbook.Worksheets(strEquivsSheetName)
     End If
-    Set shtOutput = getSheetOrCreateIfNotFound(ActiveWorkbook, "Consolidated")
+    Set shtOutput = getSheetOrCreateIfNotFound(Excel.ActiveWorkbook, "Consolidated")
 
     ClearEntireSheet shtOutput
     
@@ -114,8 +131,8 @@ End Sub
 
 
 Function AddColumnHeadersFrom( _
-    shtDefs As Worksheet _
-    , shtOutput As Worksheet _
+    shtDefs As Excel.Worksheet _
+    , shtOutput As Excel.Worksheet _
 )
 ' also sets first and last column numbers from SourceDefinition
 ' ***** is this now redundant ?? ******
@@ -177,20 +194,20 @@ End Function
 
 
 Function CopyDataFromDefSrcTo( _
-    ByRef shtOutput As Worksheet _
-    , ByRef shtDefs As Worksheet _
-    , ByRef shtEquivs As Worksheet _
+    ByRef shtOutput As Excel.Worksheet _
+    , ByRef shtDefs As Excel.Worksheet _
+    , ByRef shtEquivs As Excel.Worksheet _
     , ByVal intDefRow As Integer _
 )
 
 '    Dim rngDefRow As Range
     Dim strSourceFile As String
-    Dim wbk As Workbook
-    Dim shtSource As Worksheet
+    Dim wbk As Excel.Workbook
+    Dim shtSource As Excel.Worksheet
 
     strSourceFile = shtDefs.Cells(intDefRow, 2).Value & shtDefs.Cells(intDefRow, 3).Value
     On Error GoTo InvalidSource
-    Set wbk = Application.Workbooks.Open(strSourceFile, ReadOnly:=True, UpdateLinks:=False, AddToMru:=False, CorruptLoad:=False)
+    Set wbk = Excel.Application.Workbooks.Open(strSourceFile, ReadOnly:=True, UpdateLinks:=False, AddToMru:=False, CorruptLoad:=False)
     Set shtSource = wbk.Worksheets(shtDefs.Cells(intDefRow, 4).Value)
     On Error GoTo 0
 
@@ -212,11 +229,11 @@ Continue:
 End Function
 
 Function CopyRowFromSourceTo( _
-    ByRef shtOutput As Worksheet _
-    , ByRef shtDef As Worksheet _
-    , ByRef shtEquivs As Worksheet _
+    ByRef shtOutput As Excel.Worksheet _
+    , ByRef shtDef As Excel.Worksheet _
+    , ByRef shtEquivs As Excel.Worksheet _
     , ByVal intDefRow As Integer _
-    , ByRef shtSource As Worksheet _
+    , ByRef shtSource As Excel.Worksheet _
     , ByVal intSourceRow As Integer _
 )
 
@@ -339,7 +356,7 @@ Function CopyRowFromSourceTo( _
          bTreatAsNum = (InStr(CStr(shtDef.Cells(intDefRow, intCol).Value), "+") > 0)
          If intSourceCol > 0 Then
             Dim strNewValue As String
-            Dim celExisting, celNew As Range
+            Dim celExisting, celNew As Excel.Range
 'shtSource.Rows (intSrcRow)
 '            rngOutRow.Cells(1, intCol - intFirstDefCol + 2).Value = rngSrcRow.Cells(1, CInt(rngDefRow.Cells(1, intCol).Value)).Value
             Set celNew = shtSource.Cells(intSourceRow, intSourceCol)
@@ -365,3 +382,51 @@ Function CopyRowFromSourceTo( _
     Next intCol
 End Function
 
+Sub PrepareToUseConsolidation()
+' SourceDefinitions sheet contains columns for:
+'   SourceID
+'   Path
+'   File    (including trailing folder delimeter)
+'   Sheet
+'
+    Dim shtDef, shtKeyEq As Excel.Worksheet
+    Set shtDef = getSheetOrCreateIfNotFound(Excel.ActiveWorkbook, "SourceDefinitions")
+    shtDef.Cells(1, 1).Value = "SourceID"
+    shtDef.Cells(1, 2).Value = "Path"
+    shtDef.Cells(1, 3).Value = "File"
+    shtDef.Cells(1, 4).Value = "Sheet"
+    
+' then a series of Destination Column Names
+' first destination column is unique key for Wide option
+
+    shtDef.Cells(1, 5).Value = "KeyColName"
+    shtDef.Cells(1, 6).Value = "ColName2"
+    shtDef.Cells(1, 7).Value = "ColName3"
+    shtDef.Cells(1, 8).Value = "ColName4"
+
+' and finally a column (NOT YET IMPLEMENTED) called
+'   Exceptions
+' which gives logic stating which rows NOT to import
+
+    shtDef.Cells(1, 9).Value = "Exceptions"
+
+'  routine to create SourceDefinitions AND Variables Tab if do not exist
+'  populate it with Path = current path (to show adding trailing slash
+    shtDef.Cells(2, 1).Value = "MySrc"
+    shtDef.Cells(2, 2).Value = GetFolderFromFileName(Excel.ActiveWorkbook.FullName)
+    shtDef.Cells(2, 4).Value = "Sheet1"
+    shtDef.Cells(2, 5).Value = 1
+    shtDef.Cells(2, 6).Value = 2
+    shtDef.Cells(2, 7).Value = 3
+    shtDef.Cells(2, 8).Value = 4
+
+' IF UseEquivalents option is true (ASSUME Wide is also true)
+' then also PREPARE:
+' KeyEquivalents sheet contains columns for:
+'    EquivalentIncorrectKey
+'    RefersToCorrectKey
+    Set shtKeyEq = getSheetOrCreateIfNotFound(Excel.ActiveWorkbook, "KeyEquivalents")
+    shtKeyEq.Cells(1, 1).Value = "EquivalentIncorrectKey"
+    shtKeyEq.Cells(1, 2).Value = "RefersToCorrectKey"
+
+End Sub
