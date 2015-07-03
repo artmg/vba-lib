@@ -98,10 +98,10 @@ End Sub
 ' Developer Help - MSDN definition of Range Object Members - https://msdn.microsoft.com/en-us/library/office/ff838238.aspx
 
 Function intCountValuesInRange( _
-  rng As Range _
+  Rng As Range _
 ) As Integer
 
-    intCountValuesInRange = Application.WorksheetFunction.CountA(rng)
+    intCountValuesInRange = Application.WorksheetFunction.CountA(Rng)
 
 End Function
 
