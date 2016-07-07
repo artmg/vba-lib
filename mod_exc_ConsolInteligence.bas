@@ -16,7 +16,10 @@ Const cStrModuleName As String = "mod_exc_ConsolInteligence"
 ' and multiple columns for various source values
 '
 ' (c) Join the Bits ltd
-
+'
+'  160707.AMG  used type conversion (e.g. cStr) to avoid crash when getting cell values
+'  160707.AMG  removed hard coded limit on KeyEquivalents table
+'  150706.AMG  option to ignore rows with blank keys and better handling of blanks
 '  150618.AMG  add sub to prepare SourceDefinitions sheet and use stronger typing
 '  150611.AMG  option to trim trailing & leading spaces when comparing keys to avoid dupes from typos
 '  150514.AMG  extra suggestions for improvement
@@ -43,6 +46,7 @@ Const cStrModuleName As String = "mod_exc_ConsolInteligence"
 ' IMPROVEMENTS
 ' ============
 '
+' * add optional CondFormat to identify unlinked items ($A coloured by which column empty)
 ' * PrepareToUseConsolidation: set column widths, keep trailing slash on sample path
 ' * trim trailing (& leading) '.'s ??
 ' * move Option Variables out of module into Variables tab
@@ -89,7 +93,7 @@ Dim intVals As Integer
 ' Option Variables to pass around
 Dim bWide As Boolean
 Dim eMatchType As enumDataTableMatchType
-Dim bUseEquivalents As Boolean
+Dim bUseEquivalents, bIgnoreBlanks As Boolean
 Dim strKeyIgnore As String
 
 Sub ConsolidateWithIntelligence()
@@ -104,6 +108,7 @@ Sub ConsolidateWithIntelligence()
     ' manually for now - IMPROVE move onto worksheet
     bWide = True ' Output will be wide
     bUseEquivalents = True ' use KeyEquivalents sheet
+    bIgnoreBlanks = True ' ignore rows where the key value is blank
     eMatchType = MatchCaseInsensTrim
     strKeyIgnore = "" ' text to strip before matching
 
@@ -144,7 +149,7 @@ Function AddColumnHeadersFrom( _
     ' this will be returned ByRef to the calling function
     Dim intCol As Integer
     For intCol = intFirstDefCol To shtDefs.UsedRange.Columns.Count
-        If shtDefs.Cells(1, intCol).Value <> "Exceptions" Then
+        If CStr(shtDefs.Cells(1, intCol).Value) <> "Exceptions" Then
             intVals = intCol - intFirstDefCol + 1
 ' make this redundant
 intLastDefCol = intCol
@@ -159,21 +164,23 @@ intLastDefCol = intCol
         intDefs = intSrcs ' one copy of headers per source
         ' First header is Index Field Header
         shtOutput.Cells(1, 1).Value = shtDefs.Cells(1, intFirstDefCol).Value
+        ' NB consider type conversion (e.g. cStr) for source value to avoid crash on error
     Else
         intDefs = 1 ' single copy of headers
         ' first header is Source ID header
         shtOutput.Cells(1, 1).Value = shtDefs.Cells(1, 1).Value
+        ' NB consider type conversion (e.g. cStr) for source value to avoid crash on error
     End If
 
     For intDef = 1 To intDefs
         For intCol = 1 To intVals
             Dim strHeadText As String
-            strHeadText = shtDefs.Cells(1, intCol + intFirstDefCol - 1).Value
+            strHeadText = CStr(shtDefs.Cells(1, intCol + intFirstDefCol - 1).Value)
             If bWide Then ' prepend with SourceID
                 If intCol = 1 Then ' first set of cols is "is present" not copied values
-                    strHeadText = shtDefs.Cells(1 + intDef, 1).Value
+                    strHeadText = CStr(shtDefs.Cells(1 + intDef, 1).Value)
                 Else
-                    strHeadText = shtDefs.Cells(1 + intDef, 1).Value + "_" + strHeadText
+                    strHeadText = CStr(shtDefs.Cells(1 + intDef, 1).Value) + "_" + strHeadText
                 End If
             End If
             shtOutput.Cells(1, intDestCol(intDef, intCol)).Value = strHeadText
@@ -225,7 +232,7 @@ InvalidSource:
     intNextOutRow = intNextOutRow + 1
 
 Continue:
-    If Not wbk Is Nothing Then wbk.Close
+    If Not wbk Is Nothing Then wbk.Close SaveChanges:=False
 End Function
 
 Function CopyRowFromSourceTo( _
@@ -258,11 +265,17 @@ Function CopyRowFromSourceTo( _
     ' then do match of equivalent on output
 
     If Not bWide Then
-        strNewKey = shtDef.Cells(intDefRow, 1).Value
+        strNewKey = CStr(shtDef.Cells(intDefRow, 1).Value)
     Else
         ' first look for strNewKey in shtOutput
-        strNewKey = shtSource.Cells(intSourceRow, intSourceCol).Value
+        strNewKey = strTrimPrepareValue( _
+            strUnprepared:=CStr(shtSource.Cells(intSourceRow, intSourceCol).Value) _
+            , enumMatchType:=enumMatchType)
+    End If
 
+    If bIgnoreBlanks And (LTrim(RTrim(strNewKey)) = "") Then GoTo DontBotherWithBlanks:
+
+    If bWide Then
         strMatchKey = strMatchPrepareValue _
             (strUnprepared:=strNewKey _
             , enumMatchType:=enumMatchType _
@@ -287,15 +300,14 @@ Function CopyRowFromSourceTo( _
                 , sht:=shtEquivs _
                 , intCol:=1 _
                 , intFirstRow:=2 _
-                , intLastRow:=300 _
+                , intLastRow:=shtEquivs.UsedRange.Rows.Count _
                 , strIgnore:=strKeyIgnore _
                 )
-            ' WHAT IS intLastRow for END OF EQUIVS - currently fixed at 300!
 
             ' If Equiv found then look for set strEquivKey
             If intMatchEquivRow <> 0 Then
                 ' This assumes New Key WILL be exact value from Equivs
-                strNewKey = shtEquivs.Cells(intMatchEquivRow, 2).Value
+                strNewKey = CStr(shtEquivs.Cells(intMatchEquivRow, 2).Value)
                 ' and leaves strEquivKey variable UNUSED
 
                 strMatchKey = strMatchPrepareValue _
@@ -324,16 +336,16 @@ Function CopyRowFromSourceTo( _
         ' AND ASSUMES that NEW KEY will be 'untreated',
         ' NOT the 'prepared' value
 '        ' IS KEY ALWAYS FIRST ?
-'        strNewKey = shtSource.Cells(intSourceRow, intSourceCol).Value
+'        strNewKey = CStr(shtSource.Cells(intSourceRow, intSourceCol).Value)
     Else
         ' else add a new one on the end
         intOutRow = intNextOutRow
         intNextOutRow = intNextOutRow + 1
 '        ' CAN WE PULL THIS OUT A LEVEL TO DEDUPE ABOVE?
 '        If bWide Then
-'            strNewKey = shtSource.Cells(intSourceRow, intSourceCol).Value
+'            strNewKey = CStr(shtSource.Cells(intSourceRow, intSourceCol).Value)
 '        Else
-'            strNewKey = shtDef.Cells(intDefRow, 1).Value
+'            strNewKey = CStr(shtDef.Cells(intDefRow, 1).Value)
 '        End If
     End If
 
@@ -342,7 +354,7 @@ Function CopyRowFromSourceTo( _
     rngOutRow.Cells(1, 1).Value = strNewKey
 '    Else ' if not wide, copy SourceID onto destination
 '        Set rngOutRow = shtOutput.Rows(intNextOutRow)
-'        strNewKey = shtDef.Cells(intDefRow, 1).Value
+'        strNewKey = CStr(shtDef.Cells(intDefRow, 1).Value)
 '        rngOutRow.Cells(1, 1).Value = shtDef.Cells(intDefRow, 1).Value
 '    End If
 
@@ -364,12 +376,12 @@ Function CopyRowFromSourceTo( _
             If bTreatAsNum Then
                 celExisting.Value = celExisting.Value + celNew.Value
             Else
-                strNewValue = celNew.Value
+                strNewValue = CStr(celNew.Value)
                 If (CStr(celExisting.Value) <> "") And (strNewValue <> "") Then
     '                If bMatchCase Then
     '                    strToReplace = strKeyIgnore
     '                Else
-                    If UCase(strNewValue) <> UCase(celExisting.Value) Then
+                    If UCase(strNewValue) <> UCase(CStr(celExisting.Value)) Then
                         strNewValue = CStr(celExisting.Value) + cStrMultiValDelim + strNewValue
                     End If
     '                End If
@@ -380,6 +392,7 @@ Function CopyRowFromSourceTo( _
             End If
         End If
     Next intCol
+DontBotherWithBlanks:
 End Function
 
 Sub PrepareToUseConsolidation()
@@ -392,10 +405,10 @@ Sub PrepareToUseConsolidation()
     Dim shtDef, shtKeyEq As Excel.Worksheet
     Set shtDef = getSheetOrCreateIfNotFound(Excel.ActiveWorkbook, "SourceDefinitions")
     shtDef.Cells(1, 1).Value = "SourceID"
-    shtDef.Cells(1, 2).Value = "Path"
+    shtDef.Cells(1, 2).Value = "Path (*including* trailing slash)"
     shtDef.Cells(1, 3).Value = "File"
     shtDef.Cells(1, 4).Value = "Sheet"
-    
+
 ' then a series of Destination Column Names
 ' first destination column is unique key for Wide option
 
