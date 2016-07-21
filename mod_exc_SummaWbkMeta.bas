@@ -1,24 +1,47 @@
-Attribute VB_Name = "mod_exc_SummariseWbkMeta"
-' mod_exc_SummariseWbkMeta
+Attribute VB_Name = "mod_exc_SummaWbkMeta"
+Option Explicit
 
-' create a summary of metadata for workbooks in a given folder tree
-
-'Walk a tree chosen by user to create an output table in excel
-'For each file list:
+' error handling tag             **********************
+Const cStrModuleName As String = "mod_exc_SummaWbkMeta"
+'                                **********************
+'
+' (c) Join the Bits ltd
+'
+' Create a summary of metadata for workbooks in a given folder tree
+'
+' This module is used to enumerate all XLS files in a folder tree 
+' chosen by the user, and create an output table for each file with 
 '   Filename
 '   Path
 '   Modified Date
-'   # rows
-'   # cols
+'   # rows (in first worksheet only)
+'   # cols (in first worksheet only)
+'
+'  160721.AMG  renamed from mod_exc_SummariseWbkMeta
+'  150506.AMG  derived from mod_exc_SchemaReader
+'
 
-' Depends on
+' REFERENCES
 ' ==========
+'
+' This module uses the following references (paths and GUIDs may vary)
+'   (only those required by it's dependent modules)
+
+' DEPENDENCIES
+' ============
 '
 ' This module uses the following vba-lib modules
 ' AND any References specified within them
 '
-' mod_off_FilesFoldersSitesLinks
-' mod_off_ExportListToExcel
+' vba-lib / mod_off_FilesFoldersSitesLinks
+' vba-lib / mod_off_ExportListToExcel
+'
+
+' IMPROVEMENTS
+' ============
+'
+' * turn workbook opening code (shared with mod_exc_SummaWkshtSchemas) into generic function in mod_off_FilesFoldersSitesLinks
+' * collect # rows and columns from ALL sheets, not just first
 '
 
 
