@@ -1,10 +1,12 @@
-Attribute VB_Name = "mod_exc_SchemaReader"
+Attribute VB_Name = "mod_exc_SummaWkshtSchemas"
 Option Explicit
 
-' error handling tag             **********************
-Const cStrModuleName As String = "mod_exc_SchemaReader"
-'                                **********************
-
+' error handling tag             ***************************
+Const cStrModuleName As String = "mod_exc_SummaWkshtSchemas"
+'                                ***************************
+'
+' (c) Join the Bits ltd
+'
 ' This module is used to enumerate all XLS files in a
 ' folder, chosen by the user, and examine the schemas
 ' used in every sheet
@@ -12,18 +14,17 @@ Const cStrModuleName As String = "mod_exc_SchemaReader"
 ' the spreadsheet name, the worksheet name and all
 ' column headings from row A
 '
+'  160721.AMG  renamed from mod_exc_SchemaReader
 '  150511.AMG  standardised into vba-lib style and rationatised sub funcs
 '  141105.AMG  do xls & xlsx, transpose, rowcount & doublespace
 '  071030.AMG  created
 '
 
-' References
+' REFERENCES
 ' ==========
 '
 ' This module uses the following references (paths and GUIDs may vary)
-'
-' (only references from dependencies)
-
+'   (only those required by it's dependent modules)
 
 ' DEPENDENCIES
 ' ============
@@ -38,7 +39,7 @@ Const cStrModuleName As String = "mod_exc_SchemaReader"
 ' IMPROVEMENTS
 ' ============
 '
-' * turn workbook opening code (shared with mod_exc_SummariseWbkMeta) into generic function in mod_off_FilesFoldersSitesLinks
+' * turn workbook opening code (shared with mod_exc_SummaWbkMeta) into generic function in mod_off_FilesFoldersSitesLinks
 '
 
 
