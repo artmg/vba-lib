@@ -1,5 +1,12 @@
-Attribute VB_Name = "mod_exc_ShtsCollateCols"
-' mod_exc_ShtsCollateCols
+Attribute VB_Name = "mod_exc_SummaWbkCollateCols"
+Option Explicit
+
+' error handling tag             *****************************
+Const cStrModuleName As String = "mod_exc_SummaWbkCollateCols"
+'                                *****************************
+'
+' (c) Join the Bits ltd
+'
 
 ' Open all workbooks in a given folder tree and
 ' Collate data from columns
@@ -10,15 +17,15 @@ Attribute VB_Name = "mod_exc_ShtsCollateCols"
 '   - each row represents a data field
 ' - NO rows have been added or removed in individual workbooks
 
+'  160721.AMG  renamed from mod_exc_ShtsCollateCols
 '  150506.AMG  created
 
-' References
+
+' REFERENCES
 ' ==========
 '
 ' This module uses the following references (paths and GUIDs may vary)
-'
-' (only references from dependencies)
-
+'   (only those required by it's dependent modules)
 
 ' DEPENDENCIES
 ' ============
