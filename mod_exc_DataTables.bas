@@ -9,6 +9,7 @@ Const cStrModuleName As String = "mod_exc_DataTables"
 ' Practical subfunctions for manipulating data tables easily
 '
 
+'  160721.AMG  get all data rows from sheet without header(s)
 '  150622.AMG  normalise table with multiple entries in one column
 '  150611.AMG  new match options to trim trailing & leading spaces
 '  150326.AMG  added Table Match functions previously in Consol module
@@ -31,7 +32,9 @@ Const cStrModuleName As String = "mod_exc_DataTables"
 ' IMPROVEMENTS
 ' ============
 '
+' * work out where SplitCellsWithKey and TransTblNormaliseMultiEntries are used to test the following
 ' * simplify TransTblNormaliseMultiEntries to use mod_off_ExportListToExcel.bas
+'
 
 ' PREPARATION
 ' ===========
@@ -53,13 +56,13 @@ End Enum
 '
 
 Public Function FillTableDownByCopyingBlanksFromAbove()
-    Dim Rng, rRow, rCel As Range
-    Set Rng = ActiveSheet.UsedRange
-    For Each rRow In Rng.Rows
+    Dim rng, rRow, rCel As Range
+    Set rng = ActiveSheet.UsedRange
+    For Each rRow In rng.Rows
         For Each rCel In rRow.Cells
             With rCel
                 If (.Value = "") And (.row > 1) Then
-                    .Value = Rng.Cells(.row - 1, .Column).Value
+                    .Value = rng.Cells(.row - 1, .Column).Value
                 End If
             End With
         Next
@@ -78,6 +81,37 @@ Public Function FillColumnDownByCopyingBlanksFromAbove()
 End Function
 
 
+
+'
+' *** TABLE READ *****************************
+'
+
+' Get the Range of the table Data rows from the selected sheet
+' but ignoring any header rows if present
+
+Public Function rngGetTableDataFromSheet( _
+    Optional ByRef shtFromWorksheet As Excel.Worksheet _
+    , Optional ByVal lngNumHeaders As Long = 0 _
+) As Excel.Range
+    
+    Dim rng As Excel.Range
+    Dim sht As Excel.Worksheet
+    If sht Is Nothing Then
+        Set sht = Excel.Application.ActiveSheet
+    End If
+
+    ' credit - http://www.pcreview.co.uk/threads/vba-select-used-range-minus-the-top-header.3517661/
+    If lngNumHeaders = 0 Then
+        Set rng = sht.UsedRange
+    Else
+        With sht.UsedRange
+            Set rng = .Cells(1 + lngNumHeaders, 1).Resize(.Rows.Count - lngNumHeaders, .Columns.Count)
+        End With
+    End If
+    ' alternatively use INTERSECT - http://www.mrexcel.com/forum/excel-questions/619875-exclude-rows-usedrange.html
+    
+    Set rngGetTableDataFromSheet = rng
+End Function
 
 '
 ' *** TABLE SEARCH / MATCH *****************************
@@ -199,15 +233,15 @@ Dim WorkRng As Range
 
 'based partly on http://www.extendoffice.com/documents/excel/2211-excel-split-cell-by-carriage-return.html
 'Update 20141024
-Dim Rng As Range
+Dim rng As Range
 On Error Resume Next
-For Each Rng In WorkRng
+For Each rng In WorkRng
     Dim lLFs As Long
-    lLFs = VBA.Len(Rng) - VBA.Len(VBA.Replace(Rng, vbLf, ""))
+    lLFs = VBA.Len(rng) - VBA.Len(VBA.Replace(rng, vbLf, ""))
     If lLFs > 0 Then
-        Rng.Offset(1, 0).Resize(lLFs).Insert shift:=xlShiftDown
-        Rng.Resize(lLFs + 1).Value = Application.WorksheetFunction.Transpose(VBA.Split(Rng, vbLf))
-        Rng.Offset(1, -1).Resize(lLFs).Insert shift:=xlShiftDown
+        rng.Offset(1, 0).Resize(lLFs).Insert shift:=xlShiftDown
+        rng.Resize(lLFs + 1).Value = Application.WorksheetFunction.Transpose(VBA.Split(rng, vbLf))
+        rng.Offset(1, -1).Resize(lLFs).Insert shift:=xlShiftDown
     End If
 Next
 End Sub

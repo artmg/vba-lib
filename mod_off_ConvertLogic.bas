@@ -8,7 +8,8 @@ Const cStrModuleName As String = "mod_off_ConvertLogic"
 ' General data conversions and simple logical evaluations
 
 '
-'  150519.AMG  created with strBytesReversed 
+'  160721.AMG  moved bTestMatch in from mod_exc_WbkShtRngName
+'  150519.AMG  created with strBytesReversed
 '
 
 ' References
@@ -67,3 +68,23 @@ Function strBytesReversed( _
     strBytesReversed = strResult
 
 End Function
+
+
+' moved in from mod_exc_WbkShtRngName
+Function bTestMatch _
+(strLookAt As String _
+, strLookFor As String _
+, bExactMatch As Boolean _
+) As Boolean
+    If bExactMatch Then
+        bTestMatch = UCase(strLookAt) = UCase(strLookFor)
+    Else
+        bTestMatch = UCase(Left(strLookAt, Len(strLookFor))) = UCase(strLookFor)
+    End If
+End Function
+
+
+
+
+
+

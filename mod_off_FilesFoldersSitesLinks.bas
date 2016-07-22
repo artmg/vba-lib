@@ -8,6 +8,7 @@ Const cStrModuleName As String = "mod_off_FilesFoldersSitesLinks"
 ' generic functions for manipulating filesystem objects
 ' and web and sharepoint sites and URLs
 '
+'  160722.AMG  only documented improvements
 '  150511.AMG  minor documentation tweaks
 '  150413.AMG  debugged recursion by moving into sub-function
 '  150316.AMG  added recursion into subfolders
@@ -23,6 +24,7 @@ Const cStrModuleName As String = "mod_off_FilesFoldersSitesLinks"
 '
 ' Scripting = Microsoft Scripting Runtime (C:\Windows\SysWOW64\scrrun.dll) {420B2830-E718-11CF-893D-00A0C9054228}
 ' MSXML2 = Microsoft XML, v6.0 (C:\WINDOWS\System32\msxml6.dll) {F5078F18-C551-11D3-89B9-0000F81FE221}
+'
 
 ' DEPENDENCIES
 ' ============
@@ -34,10 +36,10 @@ Const cStrModuleName As String = "mod_off_FilesFoldersSitesLinks"
 ' ============
 '
 ' * add types to function names (e.g. strFileNameWithoutExtension)
+' * remove explicit references to Excel (or 'exc') unless that's the only MS Office app that gives the functionality required
 ' * GetFolderFromFileName: option to leave trailing slash
 ' * Consider hiving Links routines into separate module, to reduce need to add MSXML2 reference when not required
 ' * Consider moving the filename matching routine into a more generic module as a string matcher
-' * derive wbkOpenWithNoErrors code from mod_exc_SummaWkshtSchemas or mod_exc_SummaWbkMeta and perhaps close as well
 '
 
 ' kludge for apps without Application.PathSeparator
@@ -99,15 +101,15 @@ End Function
 
 ' was mod_exc_ParseAuditFiles 080326.AMG
 ' now uses InStrRev to get the last "." 150219.AMG
-Function FileNameWithoutExtension(strFilename As String) As String
+Function FileNameWithoutExtension(strFileName As String) As String
     Dim str As String
     Dim iPosn As Integer
     
-    iPosn = InStrRev(strFilename, ".")
+    iPosn = InStrRev(strFileName, ".")
     If iPosn > 1 Then
-        str = Left(strFilename, iPosn - 1)
+        str = Left(strFileName, iPosn - 1)
     Else
-        str = strFilename
+        str = strFileName
     End If
     
     FileNameWithoutExtension = str
@@ -121,14 +123,25 @@ End Function
 Function strFolderChosenByUser(strTitle As String) As String
 ' Ask user to identify a file to choose that folder
 
+' This has been used both from Excel and other Office apps, over different office versions,
+' however the Object Type definitions appear to have caused issues when switching from 1 to the other
+' for now we are using late binding as a way to (hopefully) avoid these issues
+
+' need to check whether an Application / Excel.Application object is required when using from other apps
+' and whether this code needs to check which app is the caller
 
 ' credit - http://www.office-forums.com/threads/filedialog-visio-2003-dilemma.1621339/#post-5072038
-    Dim xlApp As New Excel.Application
+'    Dim app As New Excel.Application
+'    Dim app As New Application
 
     ' help - https://msdn.microsoft.com/en-us/library/office/ff863983.aspx
-    Dim dlg As FileDialog
+'    Dim dlg As FileDialog
 '    Dim dlg As Office.FileDialog
-    Set dlg = xlApp.FileDialog(msoFileDialogFolderPicker)
+'    Set dlg = app.FileDialog(fileDialogType:=msoFileDialogFolderPicker)
+
+' try late binding
+    Dim dlg As Object
+    Set dlg = Application.FileDialog(fileDialogType:=msoFileDialogFolderPicker)
 
     dlg.Title = strTitle
 '    dlg.ButtonName = "Select"
@@ -147,8 +160,8 @@ Function strFolderChosenByUser(strTitle As String) As String
     Else
         ' or would we use = CurDir
     End If
-    xlApp.Quit
-    Set xlApp = Nothing
+'    app.Quit
+'    Set app = Nothing
 End Function
 
 
@@ -250,7 +263,7 @@ End Function
 
 
 Function bMatchFilenameWithFilter( _
-    ByVal strFilename As String _
+    ByVal strFileName As String _
     , ByVal strFilter As String _
     ) As Boolean
 ' although it may be slightly more computationally expensive to repeat this split apart for each individual file
@@ -271,7 +284,7 @@ Function bMatchFilenameWithFilter( _
 ' IF check that split was not empty
     For iFilter = 0 To UBound(strFilters)
 'NB This test is currently ONLY matching the last characters (e.g. extension)
-        If LCase(Right(strFilename, Len(strFilters(iFilter)))) = LCase(strFilters(iFilter)) Then
+        If LCase(Right(strFileName, Len(strFilters(iFilter)))) = LCase(strFilters(iFilter)) Then
             bMatchFilenameWithFilter = True
         End If
     Next iFilter

@@ -7,6 +7,7 @@ Const cStrModuleName As String = "mod_off_ExportListToExcel"
 
 ' May be called by ANY MS Office app to quickly create an Excel table list
 '
+' 160722.AMG  documented improvements only
 ' 150511.AMG  standardised style and added MakeHeaderRow and ID (and previously added range return frig)
 ' 150316.AMG  debug pointer issue
 ' 150303.AMG  created
@@ -30,6 +31,7 @@ Const cStrModuleName As String = "mod_off_ExportListToExcel"
 ' ============
 '
 ' * Function to resize columns to fit contents
+' * test from non-Excel app, especially ExcelOutputMakeHeaderRow ActiveSheet
 '
 
 
@@ -40,7 +42,7 @@ Dim lngCurrentID As Long
 
 Function ExcelOutputCreateWorksheet()
     Dim wbk As Excel.Workbook
-    Set wbk = Excel.Application.Workbooks.Add
+    Set wbk = Excel.Application.Workbooks.Add ' see mod_exc_WbkShtRngName wbkOpenSafelyToRead if you need to pass in the xlApp
     Set shtOut = wbk.Worksheets(1)
     
     lngCurrentRow = 1

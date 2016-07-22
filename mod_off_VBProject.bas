@@ -1,6 +1,24 @@
 Attribute VB_Name = "mod_off_VBProject"
-' mod_off_VBProject
+'Option Explicit
 
+' error handling tag             *******************
+Const cStrModuleName As String = "mod_off_VBProject"
+'                                *******************
+'
+' (c) Join the Bits ltd
+'
+
+' Utility subs from working with VBA code and objects to do with programming
+'
+' you must "Trust access to the VBA project object model"
+' File tab, click Options, click Trust Center, and then click Trust Center Settings
+' in Trust Center dialog box / Macro Settings page / Developer Macro Settings / check the box
+'
+' help - Document.VBProject Property (Visio) https://msdn.microsoft.com/en-us/library/office/ff765161.aspx
+'
+
+'
+' 160722.AMG  reformatted header only
 ' 150324.AMG  enabled for (and test with) Excel VBProj objects
 ' 150309.AMG  renamed from mod_off_References and added Export
 ' 150303.AMG  made it generic for any office app
@@ -8,20 +26,37 @@ Attribute VB_Name = "mod_off_VBProject"
 ' 080417.AMG  added quick reference documentor
 ' 080229.AMG  renamed from mod_vba_references
 ' 0603xx.AMG  created as mod_vba_references within HART
+'
 
-' you must "Trust access to the VBA project object model"
-' File tab, click Options, click Trust Center, and then click Trust Center Settings
-' in Trust Center dialog box / Macro Settings page / Developer Macro Settings / check the box
+' REFERENCES
+' ==========
+'
+' This module uses the following references (paths and GUIDs may vary)
+'   (only those required by it's dependent modules)
 
 ' This should work as is, but if you want to extend this code (e.g. under Visio)
 ' you can access the object model from the IDE if you add the following reference (paths and GUIDs may vary)
 '
 ' VBIDE = Microsoft Visual Basic for Applications Extensibility 5.3 (C:\Program Files (x86)\Common Files\Microsoft Shared\VBA\VBA6\VBE6EXT.OLB) {0002E157-0000-0000-C000-000000000046}
+
+
+' DEPENDENCIES
+' ============
 '
-' help - Document.VBProject Property (Visio) https://msdn.microsoft.com/en-us/library/office/ff765161.aspx
+' This module uses the following vba-lib modules
+' AND any References specified within them
+'
+' vba-lib / mod_off_FilesFoldersSitesLinks
+' vba-lib / mod_off_ExportListToExcel
+' vba-lib / mod_exc_DataTables
 '
 
-' Option Explicit
+' IMPROVEMENTS
+' ============
+'
+' * none for now
+'
+
 
 Sub ListReferences()
     Debug.Print "' References"
