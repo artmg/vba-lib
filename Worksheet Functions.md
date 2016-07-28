@@ -16,3 +16,24 @@ as if Querying the data from another place in the current workbook.
     * see also compacted (single formula) equivalent in comments
 
 
+## COUNT DISTINCT
+
+There is no Out Of the Box (OOB) worksheet function in Excel to do this, 
+but there are a number of compound formulas you can useful
+
+If you have numerical values and NO blanks...
+=SUM(1/COUNTIF(B2:B111,B2:B111)) 
+
+This one should always work providing you enter it as an array formula (CTRL-SHIFT-ENTER)
+=SUM(IF(FREQUENCY(IF(LEN(B2:B111)>0,MATCH(B2:B111,B2:B111,0),""), IF(LEN(B2:B111)>0,MATCH(B2:B111,B2:B111,0),""))>0,1))
+
+See other articles for alternatives
+
+credit - http://www.cpearson.com/excel/Duplicates.aspx
+help - http://www.get-digital-help.com/2009/06/09/count-unique-values-in-a-column-in-excel/
+
+## Statistics
+
+For a useful introduction to Statistical Worksheet Functions in Excel, search for 
+
+UCL Excel Statistics Manual workbook on Advanced Excel Statistical Functions and Formulae
