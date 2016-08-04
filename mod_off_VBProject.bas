@@ -18,6 +18,7 @@ Const cStrModuleName As String = "mod_off_VBProject"
 '
 
 '
+' 160804.AMG  export from Active workbook (not the one containing this code)
 ' 160722.AMG  reformatted header only
 ' 150324.AMG  enabled for (and test with) Excel VBProj objects
 ' 150309.AMG  renamed from mod_off_References and added Export
@@ -87,7 +88,8 @@ Function objCurrentVBProject() As Object
 '        Case "Microsoft Access":
 '            Set objCurrentVBProject = Access.Application
         Case "Microsoft Excel":
-            Set objCurrentVBProject = Excel.ThisWorkbook.VBProject
+'            Set objCurrentVBProject = Excel.ThisWorkbook.VBProject
+            Set objCurrentVBProject = Excel.ActiveWorkbook.VBProject
 '        Case Else
 '            Set objCurrentVBProject = VBIDE.VDE.ActiveVBProject
 '            Set objCurrentVBProject = Application.Vbe.ActiveVBProject

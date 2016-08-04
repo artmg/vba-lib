@@ -208,7 +208,7 @@ Public Function strTrimPrepareValue _
 (ByVal strUnprepared As String _
 , ByVal enumMatchType As enumDataTableMatchType _
 ) As String
-    ' moved from mod_exc_ConsolInteligence
+	' moved from mod_exc_ConsolInteligence
     Dim strKeyToMatch As String
     
     Select Case enumMatchType

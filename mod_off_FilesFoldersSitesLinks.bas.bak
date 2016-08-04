@@ -72,7 +72,7 @@ Private Declare Function URLDownloadToFile Lib "urlmon" Alias _
 
 Function strExpandEnvironmentVariables( _
         strWithPercents As String _
-) As String
+) as string
     Dim wshShell As Object
 
         ' credit http://stackoverflow.com/a/7556236
