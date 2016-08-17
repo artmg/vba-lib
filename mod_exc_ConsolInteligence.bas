@@ -17,6 +17,7 @@ Const cStrModuleName As String = "mod_exc_ConsolInteligence"
 '
 ' (c) Join the Bits ltd
 '
+'  160817.AMG  copy to KeyEquivs - need to set on workbook
 '  160804.AMG  allow environment variables
 '  160707.AMG  used type conversion (e.g. cStr) to avoid crash when getting cell values
 '  160707.AMG  removed hard coded limit on KeyEquivalents table
@@ -82,6 +83,16 @@ Const cStrModuleName As String = "mod_exc_ConsolInteligence"
 '   the corresponding 'Correct' value is sought instead,
 '   before creating a separate line
 '
+' You may want to add a shortcut key for the Macro "CopyValuesToKeyEquiv"
+'
+' You may find it useful to inset a "similarities" column (e.g. B)
+'   e.g B2  =IF(d2="",c2,d2)
+'   where d and c are the columns you want to look in for the similarities
+' Also add Conditional Format in column A
+'   e.g. =d2="" ' red
+'        =c2="" ' blue
+' Then sort on Similarities column to group possible matches
+' you may have a CrossCheck column like Similarities, but to validate the items really are KeyEquivalents
 
 Const cStrMultiValDelim As String = "; "
 
@@ -95,15 +106,15 @@ Dim intVals As Integer
 Dim bWide As Boolean
 Dim eMatchType As enumDataTableMatchType
 Dim bUseEquivalents, bIgnoreBlanks As Boolean
-Dim strKeyIgnore As String
+Dim gStrKeyIgnore As String
+Dim gStrSourceSheetName As String
+Dim gStrEquivsSheetName As String
 
 Sub ConsolidateWithIntelligence()
 
     Dim shtDefs As Excel.Worksheet
     Dim shtEquivs As Excel.Worksheet
     Dim shtOutput As Excel.Worksheet
-    Dim strSourceSheetName As String
-    Dim strEquivsSheetName As String
     
     ' set Option Variables
     ' manually for now - IMPROVE move onto worksheet
@@ -111,15 +122,15 @@ Sub ConsolidateWithIntelligence()
     bUseEquivalents = True ' use KeyEquivalents sheet
     bIgnoreBlanks = True ' ignore rows where the key value is blank
     eMatchType = MatchCaseInsensTrim
-    strKeyIgnore = "" ' text to strip before matching
+    gStrKeyIgnore = "" ' text to strip before matching
 
     ' IMPROVE - MAKE these variable too
-    strSourceSheetName = "SourceDefinitions"
-    strEquivsSheetName = "KeyEquivalents"
+    gStrSourceSheetName = "SourceDefinitions"
+    gStrEquivsSheetName = "KeyEquivalents"
 
-    Set shtDefs = Excel.ActiveWorkbook.Worksheets(strSourceSheetName)
+    Set shtDefs = Excel.ActiveWorkbook.Worksheets(gStrSourceSheetName)
     If bUseEquivalents Then
-        Set shtEquivs = Excel.ActiveWorkbook.Worksheets(strEquivsSheetName)
+        Set shtEquivs = Excel.ActiveWorkbook.Worksheets(gStrEquivsSheetName)
     End If
     Set shtOutput = getSheetOrCreateIfNotFound(Excel.ActiveWorkbook, "Consolidated")
 
@@ -280,7 +291,7 @@ Function CopyRowFromSourceTo( _
         strMatchKey = strMatchPrepareValue _
             (strUnprepared:=strNewKey _
             , enumMatchType:=enumMatchType _
-            , strIgnore:=strKeyIgnore _
+            , strIgnore:=gStrKeyIgnore _
             )
 
         intMatchOutRow = intMatchGetRow _
@@ -290,7 +301,7 @@ Function CopyRowFromSourceTo( _
             , intCol:=1 _
             , intFirstRow:=2 _
             , intLastRow:=intNextOutRow - 1 _
-            , strIgnore:=strKeyIgnore _
+            , strIgnore:=gStrKeyIgnore _
             )
 
         ' If not found then look for strNewKey in shtEquiv
@@ -302,7 +313,7 @@ Function CopyRowFromSourceTo( _
                 , intCol:=1 _
                 , intFirstRow:=2 _
                 , intLastRow:=shtEquivs.UsedRange.Rows.Count _
-                , strIgnore:=strKeyIgnore _
+                , strIgnore:=gStrKeyIgnore _
                 )
 
             ' If Equiv found then look for set strEquivKey
@@ -314,7 +325,7 @@ Function CopyRowFromSourceTo( _
                 strMatchKey = strMatchPrepareValue _
                     (strUnprepared:=strNewKey _
                     , enumMatchType:=enumMatchType _
-                    , strIgnore:=strKeyIgnore _
+                    , strIgnore:=gStrKeyIgnore _
                     )
         
                 ' and look for THAT in shtOutput
@@ -325,7 +336,7 @@ Function CopyRowFromSourceTo( _
                     , intCol:=1 _
                     , intFirstRow:=2 _
                     , intLastRow:=intNextOutRow - 1 _
-                    , strIgnore:=strKeyIgnore _
+                    , strIgnore:=gStrKeyIgnore _
                     )
             End If
         End If
@@ -380,7 +391,7 @@ Function CopyRowFromSourceTo( _
                 strNewValue = CStr(celNew.Value)
                 If (CStr(celExisting.Value) <> "") And (strNewValue <> "") Then
     '                If bMatchCase Then
-    '                    strToReplace = strKeyIgnore
+    '                    strToReplace = gStrKeyIgnore
     '                Else
                     If UCase(strNewValue) <> UCase(CStr(celExisting.Value)) Then
                         strNewValue = CStr(celExisting.Value) + cStrMultiValDelim + strNewValue
@@ -395,6 +406,32 @@ Function CopyRowFromSourceTo( _
     Next intCol
 DontBotherWithBlanks:
 End Function
+
+
+Sub CopyValuesToKeyEquiv()
+Attribute CopyValuesToKeyEquiv.VB_ProcData.VB_Invoke_Func = "K\n14"
+' You may wish to add a keyboard shortcut for this feature, to speed up your work
+' E.g. ALT-F8 (Macro) Options / CTRL + q
+
+    ' consider validating that exactly two cells are selected
+    Excel.Selection.Copy
+    
+    ' IMPROVE - MAKE this variable too
+    gStrEquivsSheetName = "KeyEquivalents"
+
+    With Excel.ActiveWorkbook.Worksheets(gStrEquivsSheetName)
+        .Cells(.UsedRange.Rows.Count + 1, 1).PasteSpecial _
+            Paste:=xlPasteValues _
+            , Operation:=xlNone _
+            , SkipBlanks:=False _
+            , Transpose:=True
+    End With
+    
+    ' could put message in StatusBar but might be better if we use an OnTime Sub to set it to False after a few seconds
+    Excel.Application.CutCopyMode = False
+End Sub
+
+
 
 Sub PrepareToUseConsolidation()
 ' SourceDefinitions sheet contains columns for:

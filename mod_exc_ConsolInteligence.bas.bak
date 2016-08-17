@@ -17,6 +17,8 @@ Const cStrModuleName As String = "mod_exc_ConsolInteligence"
 '
 ' (c) Join the Bits ltd
 '
+'  160817.AMG  copy to KeyEquivs - need to set on workbook
+'  160804.AMG  allow environment variables
 '  160707.AMG  used type conversion (e.g. cStr) to avoid crash when getting cell values
 '  160707.AMG  removed hard coded limit on KeyEquivalents table
 '  150706.AMG  option to ignore rows with blank keys and better handling of blanks
@@ -212,7 +214,7 @@ Function CopyDataFromDefSrcTo( _
     Dim wbk As Excel.Workbook
     Dim shtSource As Excel.Worksheet
 
-    strSourceFile = shtDefs.Cells(intDefRow, 2).Value & shtDefs.Cells(intDefRow, 3).Value
+    strSourceFile = strExpandEnvironmentVariables(shtDefs.Cells(intDefRow, 2).Value & shtDefs.Cells(intDefRow, 3).Value)
     On Error GoTo InvalidSource
     Set wbk = Excel.Application.Workbooks.Open(strSourceFile, ReadOnly:=True, UpdateLinks:=False, AddToMru:=False, CorruptLoad:=False)
     Set shtSource = wbk.Worksheets(shtDefs.Cells(intDefRow, 4).Value)
