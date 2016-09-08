@@ -37,3 +37,31 @@ help - http://www.get-digital-help.com/2009/06/09/count-unique-values-in-a-colum
 For a useful introduction to Statistical Worksheet Functions in Excel, search for 
 
 UCL Excel Statistics Manual workbook on Advanced Excel Statistical Functions and Formulae
+
+## Truncate at last delimiter
+
+Suppose you have a file path, and want to convert it to a path name only, you would want to 
+remove the last delimiter and all that follows.
+
+If VBA you can find from the right, but not in worksheet formulas. Therefore you must use the logic:
+* Count the number of delimiters (N)
+	* to do this Substitute the delimiters with nul and compare the length before and after
+* Substitute the Nth delimeter with a string you won't find elsewhere
+* Find this string's position and truncate just before there
+
+So the last delimiter's position is as follows,
+unless you have a multicharacter delimiter where you would need to divide the difference
+
+=FIND("^^",SUBSTITUTE(A2,"/","^^",LEN(A2)-LEN(SUBSTITUTE(A2,"/",""))))
+
+To return the first portion
+
+=MID(A2,1,FIND("^^",SUBSTITUTE(A2,"/","^^",LEN(A2)-LEN(SUBSTITUTE(A2,"/",""))))-1)
+
+and to return the last portion
+
+=RIGHT(A2,LEN(A2)-FIND("^^",SUBSTITUTE(A2,"/","^^",LEN(A2)-LEN(SUBSTITUTE(A2,"/","")))))
+
+Replace A2 with the cell you want and "/" with your delimiter
+NB: There is no error checking in these formulas (if no delimiter found)
+If A2 contains 'escaped' delimiters you will need to substitute them out in all occurrences of A2
