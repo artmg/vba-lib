@@ -78,8 +78,46 @@ Usage:
         * MS Project Menu / Project / Status / Status Date
 
 
+#### Finishing last week
 
- 
+Following similar requirements to the Flag above,
+here is the formula for a separate flag to indicate all tasks 
+that were planned to finish during the previous week.
+NB: This does NOT take % Complete into account
 
- 
+Flag2_FinishingLastWeek
+
+IIf(
+  [Finish] <= (7 - 7 + [Status Date] - Weekday([Status Date]) 
+  + IIf(Weekday([Status Date]) > 4 ;7;0) )
+AND
+  [Finish] >= (1 - 7 + [Status Date] - Weekday([Status Date]) 
+  + IIf(Weekday([Status Date]) > 4 ;7;0) )
+;Yes;No)
+
+
+##### Happing this week OR Finished last week
+
+If you want to extend the "This Week's Activity" calculation 
+to include tasks that Finished last week AS WELL, 
+
+IIf(
+(
+  [Start] <= (7 + 0 + [Status Date] - Weekday([Status Date]) 
+  + IIf(Weekday([Status Date]) > 4 ;7;0) )
+AND
+  [Finish] >= (1 + 0 + [Status Date] - Weekday([Status Date]) 
+  + IIf(Weekday([Status Date]) > 4 ;7;0) )
+) OR (
+  [Finish] <= (7 - 7 + [Status Date] - Weekday([Status Date]) 
+  + IIf(Weekday([Status Date]) > 4 ;7;0) )
+AND
+  [Finish] >= (1 - 7 + [Status Date] - Weekday([Status Date]) 
+  + IIf(Weekday([Status Date]) > 4 ;7;0) )
+)
+;Yes;No)
+
+NB: there may be a shorter formula available by twisting the logic, 
+but this one might be simpler to understand and build on
+
 
