@@ -65,3 +65,20 @@ and to return the last portion
 Replace A2 with the cell you want and "/" with your delimiter
 NB: There is no error checking in these formulas (if no delimiter found)
 If A2 contains 'escaped' delimiters you will need to substitute them out in all occurrences of A2
+
+
+## Transpose Vertical table to rows
+
+This gives rows of formulas that can be pulled down on the right of the original data
+and where delimted, the data is transposed dynamically.
+It can then be lifted out using Copy / Paste Values and Sort to remove blank lines
+
+First identify which line becomes the start of the row
+
+=IF(OFFSET(A2,1,0)="Start of Data Marker","Y","")
+
+Then fill across after that to pick up subsequent lines 
+
+=IF($H2="","",IF(COUNTIF(OFFSET($H2,0,0,COLUMNS($T2:T2)+3,1),"Y")<>1,"",IF(INDEX($A2:$A32,COLUMNS($T2:T2)+3)="","",INDEX($A2:$A32,COLUMNS($T2:T2)+3))))
+
+
