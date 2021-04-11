@@ -1,9 +1,15 @@
 Attribute VB_Name = "mod_acc_FunctionWorkdays"
 Option Compare Database
 
+' mod_acc_FunctionWorkdays.bas
+'
+' 130708.AMG  adjust case for some function names
+
+
+
 ' credit > http://msdn.microsoft.com/en-us/library/office/dd327646(v=office.12).aspx
 
-Public Function Workdays(ByRef StartDate As Date, _
+Public Function Workdays(ByRef startDate As Date, _
      ByRef endDate As Date, _
      Optional ByRef strHolidays As String = "Holidays" _
      ) As Integer
@@ -18,16 +24,16 @@ Public Function Workdays(ByRef StartDate As Date, _
     Dim strWhere As String
     
     ' DateValue returns the date part only.
-    StartDate = DateValue(StartDate)
+    startDate = DateValue(startDate)
     endDate = DateValue(endDate)
     
-    nWeekdays = Weekdays(StartDate, endDate)
+    nWeekdays = Weekdays(startDate, endDate)
     If nWeekdays = -1 Then
         Workdays = -1
         GoTo Workdays_Exit
     End If
     
-    strWhere = "[Holiday] >= #" & StartDate _
+    strWhere = "[Holiday] >= #" & startDate _
         & "# AND [Holiday] <= #" & endDate & "#"
     
     ' Count the number of holidays.
@@ -48,7 +54,7 @@ Workdays_Error:
     
 End Function
 
-Public Function Weekdays(ByRef StartDate As Date, _
+Public Function Weekdays(ByRef startDate As Date, _
     ByRef endDate As Date _
     ) As Integer
     ' Returns the number of weekdays in the period from startDate
@@ -71,24 +77,24 @@ Public Function Weekdays(ByRef StartDate As Date, _
     Dim dtmX As Date
     
     ' If the end date is earlier, swap the dates.
-    If endDate < StartDate Then
-        dtmX = StartDate
-        StartDate = endDate
+    If endDate < startDate Then
+        dtmX = startDate
+        startDate = endDate
         endDate = dtmX
     End If
     
     ' Calculate the number of days inclusive (+ 1 is to add back startDate).
     varDays = DateDiff(Interval:="d", _
-        date1:=StartDate, _
+        date1:=startDate, _
         date2:=endDate) + 1
     
     ' Calculate the number of weekend days.
     varWeekendDays = (DateDiff(Interval:="ww", _
-        date1:=StartDate, _
+        date1:=startDate, _
         date2:=endDate) _
         * ncNumberOfWeekendDays) _
         + IIf(DatePart(Interval:="w", _
-        Date:=StartDate) = vbSunday, 1, 0) _
+        Date:=startDate) = vbSunday, 1, 0) _
         + IIf(DatePart(Interval:="w", _
         Date:=endDate) = vbSaturday, 1, 0)
     
