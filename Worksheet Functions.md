@@ -82,3 +82,17 @@ Then fill across after that to pick up subsequent lines
 =IF($H2="","",IF(COUNTIF(OFFSET($H2,0,0,COLUMNS($T2:T2)+3,1),"Y")<>1,"",IF(INDEX($A2:$A32,COLUMNS($T2:T2)+3)="","",INDEX($A2:$A32,COLUMNS($T2:T2)+3))))
 
 
+## Multiple matches
+
+If you are testing the contents of a cell against multiple values, but some want the same results:
+
+```
+=IF(F2="E",J2,IF(F2="I",J2,""),"")
+=IF(OR(F2="E",F2="I"),J2),"")
+=IF(ISNUMBER(SEARCH(F2,"IE")),J2,"")
+=IF(ISNUMBER(SEARCH("|"&F2&"|","|I|E|")),J2,"")
+```
+
+This would make it the equivalent of switch/case/select.
+The third technique makes it clearer, especially if there are three or more to match.
+The last is if the value to test might be multiple characters
