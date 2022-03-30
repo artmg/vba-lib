@@ -3,6 +3,19 @@ This file does NOT contain VBA code, but instead useful tips and knowledge about
 It gives guidance about using the Built-In functions in Excel to build handy features using plain old worksheets 
 without needing any macro code or other 'executables'
 
+## Calculate text as Zero
+
+Sometimes you may wany sums or running totals or differences that return number or 0 if a cell contains text, essentially ignoring or disregarding anything that is a non-numeric value.
+
+The simplest way is the shortest formula there is: N(A1)
+
+Instead of producing the `#Value!` error, this will convert to a number: a Number, Text, a Blank cell, a Date
+
+Credit to https://a4accounting.com.au/treating-text-as-zero-in-excel/ there is also a technique that will work additionally with a Text Number `'99` or `="99"`, a Text Date, even an Error...
+
+Multiply cell by 1 and catch error: =IFERROR(A1*1,0) 
+
+
 ## SMALL to dynamically filter excel table
 
 This is an alternative to the CopyTo filtering mechanism, 
