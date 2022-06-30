@@ -109,3 +109,15 @@ If you are testing the contents of a cell against multiple values, but some want
 This would make it the equivalent of switch/case/select.
 The third technique makes it clearer, especially if there are three or more to match.
 The last is if the value to test might be multiple characters
+
+## Excel pivot with text concatenation
+
+Crosstab / Pivot / text Concat
+ 
+When using Pivot tables, the Data field formulas are designed to work on numerical values
+Sometimes, however, the data columns are text values, and it would be more useful to be able to do a Sum of Field using Text Concatenation to add together the contents from matching rows
+ 
+http://superuser.com/questions/453041/grouping-labels-and-concatenating-their-text-values-like-a-pivot-table
+ 
+http://www.clearlyandsimply.com/clearly_and_simply/2011/06/emulate-excel-pivot-tables-with-texts-in-the-value-area-using-formulas.html
+
