@@ -1,7 +1,9 @@
 
-This file does NOT contain VBA code, but instead useful tips and knowledge about Worksheet Functions.
+This file does NOT contain VBA code, but instead useful tips and knowledge about Formulas for use in Spreadsheets.
 It gives guidance about using the Built-In functions in Excel to build handy features using plain old worksheets 
-without needing any macro code or other 'executables'
+without needing any macro code or other 'executables'. 
+Many of thses will also work in derivatives, 
+suchg as LibreOffice, Google Sheet, Excel web. 
 
 ## Calculate text as Zero
 
@@ -121,3 +123,35 @@ http://superuser.com/questions/453041/grouping-labels-and-concatenating-their-te
  
 http://www.clearlyandsimply.com/clearly_and_simply/2011/06/emulate-excel-pivot-tables-with-texts-in-the-value-area-using-formulas.html
 
+## If Any Or
+
+Some tables are not about myriad data, but position. 
+You may have a series of columns, some rows of which contain a mark, some of which contain another mark, but many might be left blank.
+
+Scenario:
+
+You might want a summary row above 
+that would not add, but tell whether a column contained any instances of a character, or of another, or nothing (of significance).
+
+Logic:
+
+* If any of the cells below contain X then X, 
+* otherwise 
+	* if any of the cells below contain Y then Y, 
+	* otherwise blank.
+
+```
+=IF(COUNTIF(C2:C20,"X"),"X",IF(COUNTIF(C2:C20,"Y"),"Y",""))
+```
+
+or if you want to make the first case sensitive
+
+```
+=IF(SUMPRODUCT(--EXACT("X",C2:C20)),"X",IF(COUNTIF(C2:C20,"x"),"x",""))
+```
+
+and an alternative might be using
+
+```
+SUMPRODUCT(--ISNUMBER(FIND("X",C4:C17)))
+```
