@@ -1,4 +1,6 @@
 
+# Integration
+
 ## Peak email output periods
 
 Sending emails is not always a sign of productivity, 
@@ -18,6 +20,7 @@ using Power Query, and filter the emails from the Sent Items folder.
   * Filters: Folder Path
   * Rows: DateTimeSent
 
+## Chunking
 
 ### Group data into time blocks
 
@@ -40,3 +43,26 @@ are outlined clearly in the the article https://www.excelcampus.com/charts/group
   * Add Column / Custom Column
 
 
+## Anonymisation
+
+See [Lubuild / data-extraction](https://github.com/artmg/lubuild/blob/master/help/manipulate/data-extraction.md#anonymisation)
+
+## Frequency
+
+### Simple Word Frequency in Excel 
+
+Takes a column of cells each containing a short line of text and returns a frequency count in descending order
+
+- Row 1 column headings 
+	- Text Words Frequency Range 
+- Range formula in D2:  
+	- a2:a1000 
+- Words formula in B2: 
+	- =UNIQUE(TOCOL(IFERROR(REDUCE(,INDIRECT($D$2),LAMBDA(x,y,VSTACK(TEXTSPLIT(x, " "),TEXTSPLIT(y, " ")))),"-"))) 
+- Frequency formula in C2: 
+    - =SUM((LEN(INDIRECT($D$2))-LEN(SUBSTITUTE(INDIRECT($D$2),B2,"")))/LEN(B2)) 
+- Copy the C cells down 
+- Credit for technique to: [https://www.get-digital-help.com/excel-udf-word-frequency/](https://www.get-digital-help.com/excel-udf-word-frequency/)  
+- Copy Paste Special Text Only into separate sheet and Sort 
+
+This is a ‘clever’ technique, but as with many Spreadsheet ‘coding via formula’ solutions, very inefficient and it begins to fail once you get over several thousand cells in your range.
